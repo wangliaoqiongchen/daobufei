@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_vpn"
+        android:icon="@drawable/ic_vpn"
+        android:title="VPN" />
+    <item
+        android:id="@+id/nav_dev1"
+        android:icon="@drawable/ic_dev1"
+        android:title="待开发" />
+    <item
+        android:id="@+id/nav_dev2"
+        android:icon="@drawable/ic_dev2"
+        android:title="诊断" />
+    <item
+        android:id="@+id/nav_more"
+        android:icon="@drawable/ic_more"
+        android:title="更多" />
+</menu>
