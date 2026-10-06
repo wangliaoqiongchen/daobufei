@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 全局表面与文字(深色) -->
+    <color name="screen_bg">#0F1115</color>
+    <color name="card_bg">#191D23</color>
+    <color name="card_bg_muted">#20252C</color>
+    <color name="text_primary">#E9ECF0</color>
+    <color name="text_secondary">#98A2B0</color>
+    <color name="divider">#2A303A</color>
+
+    <!-- 品牌主色(健康绿,深色下调亮) -->
+    <color name="accent">#4CC38A</color>
+    <color name="accent_container">#1B3A2A</color>
+    <color name="on_accent_container">#BFE8D0</color>
+
+    <!-- VPN 状态语义色 -->
+    <color name="status_good">#4CC38A</color>
+    <color name="status_warn">#FFB454</color>
+    <color name="status_bad">#FF8085</color>
+    <color name="status_idle">#8B95A3</color>
+    <color name="bg_good">#173224</color>
+    <color name="bg_warn">#33290F</color>
+    <color name="bg_bad">#3A1D20</color>
+    <color name="bg_idle">#1D222A</color>
+
+    <!-- 占位骨架 -->
+    <color name="skeleton">#272D36</color>
+</resources>

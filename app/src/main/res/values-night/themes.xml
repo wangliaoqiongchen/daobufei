@@ -1,7 +1,10 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+    <!-- 深色主题:颜色 token 在 values-night/colors.xml 中自动切换 -->
     <style name="Base.Theme.岛不废" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <item name="android:windowBackground">@color/screen_bg</item>
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorOnPrimary">#0B2417</item>
+        <item name="colorSecondaryContainer">@color/accent_container</item>
+        <item name="colorOnSecondaryContainer">@color/on_accent_container</item>
     </style>
 </resources>

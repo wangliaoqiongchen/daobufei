@@ -5,13 +5,13 @@
         android:icon="@drawable/ic_vpn"
         android:title="VPN" />
     <item
-        android:id="@+id/nav_dev1"
-        android:icon="@drawable/ic_dev1"
-        android:title="待开发" />
+        android:id="@+id/nav_medication"
+        android:icon="@drawable/ic_medication"
+        android:title="用药" />
     <item
-        android:id="@+id/nav_dev2"
-        android:icon="@drawable/ic_dev2"
-        android:title="诊断" />
+        android:id="@+id/nav_reminder"
+        android:icon="@drawable/ic_alarm"
+        android:title="提醒" />
     <item
         android:id="@+id/nav_more"
         android:icon="@drawable/ic_more"
