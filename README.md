@@ -57,6 +57,12 @@ ColorOS 流体云（Android 16 原生 Live Updates / Promoted Ongoing）工具�
 - **v2.0.0** · 用药提醒、自定义提醒、延迟趋势图、通知交互、深色模式与全面 UI 重构
 - v1.0 · 第一版：VPN 流体云状态展示
 
+## 开源协议
+
+[GPL-3.0](LICENSE) © 2026 Mo
+
+基于本项目修改再发布的作品须同样以 GPL-3.0 开源并保留署名。本项目使用的第三方依赖（AndroidX / Material / OkHttp / kotlinx-coroutines，均为 Apache-2.0）与 GPL-3.0 兼容。
+
 ---
 
 作者：Mo（q群：1019861339）
