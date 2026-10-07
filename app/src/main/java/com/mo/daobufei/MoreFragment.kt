@@ -46,7 +46,7 @@ class MoreFragment : Fragment() {
             setPadding(context.dp(14), 0, 0, 0)
         }
         val appNameText = TextView(context).apply {
-            text = "岛不废"
+            text = context.getString(R.string.app_name)
             textSize = 22f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(context.color(R.color.text_primary))
@@ -54,10 +54,10 @@ class MoreFragment : Fragment() {
         val versionName = try {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
         } catch (e: Exception) {
-            "未知"
+            "unknown"
         }
         val appVersionText = TextView(context).apply {
-            text = "版本 $versionName · 流体云工具箱"
+            text = context.getString(R.string.more_tagline, versionName)
             textSize = 13f
             setTextColor(context.color(R.color.text_secondary))
             setPadding(0, context.dp(4), 0, 0)
@@ -84,29 +84,33 @@ class MoreFragment : Fragment() {
             orientation = LinearLayout.VERTICAL
             setPadding(context.dp(16), context.dp(16), context.dp(16), context.dp(8))
         }
-        featureCol.addView(cardTitle(context, "功能一览"))
+        featureCol.addView(cardTitle(context, context.getString(R.string.more_features_title)))
         featureCol.addView(
             featureRow(
-                context, R.drawable.ic_vpn, "VPN 流体云监控",
-                "连接后在流体云显示节点国旗与实时延迟,支持历史趋势"
+                context, R.drawable.ic_vpn,
+                context.getString(R.string.feature_vpn_title),
+                context.getString(R.string.feature_vpn_desc)
             )
         )
         featureCol.addView(
             featureRow(
-                context, R.drawable.ic_alarm, "自定义提醒",
-                "自选标题与时间,到点弹出系统通知,每日重复"
+                context, R.drawable.ic_alarm,
+                context.getString(R.string.feature_reminder_title),
+                context.getString(R.string.feature_reminder_desc)
             )
         )
         featureCol.addView(
             featureRow(
-                context, R.drawable.ic_medication, "用药提醒",
-                "多时段提醒 + 服药日历统计(开发中,敬请期待)"
+                context, R.drawable.ic_medication,
+                context.getString(R.string.feature_med_title),
+                context.getString(R.string.feature_med_desc)
             )
         )
         featureCol.addView(
             featureRow(
-                context, R.drawable.ic_globe, "IP 诊断",
-                "查看当前出口 IP 与网络路由,排查节点是否生效"
+                context, R.drawable.ic_globe,
+                context.getString(R.string.feature_diag_title),
+                context.getString(R.string.feature_diag_desc)
             )
         )
         featureCard.addView(featureCol)
@@ -128,12 +132,12 @@ class MoreFragment : Fragment() {
             orientation = LinearLayout.VERTICAL
             setPadding(context.dp(16), context.dp(16), context.dp(16), context.dp(8))
         }
-        permissionContent.addView(cardTitle(context, "权限说明"))
+        permissionContent.addView(cardTitle(context, context.getString(R.string.more_permissions_title)))
         val permissions = listOf(
-            "通知权限" to "用于在流体云和通知栏显示 VPN 状态与提醒",
-            "网络访问权限" to "用于检测公网 IP、查询节点归属国家、测量延迟",
-            "前台服务权限" to "用于在后台持续监控,不被系统随意终止",
-            "查看网络状态权限" to "用于检测当前是否有 VPN 连接"
+            context.getString(R.string.perm_notif_title) to context.getString(R.string.perm_notif_desc),
+            context.getString(R.string.perm_net_title) to context.getString(R.string.perm_net_desc),
+            context.getString(R.string.perm_fgs_title) to context.getString(R.string.perm_fgs_desc),
+            context.getString(R.string.perm_netstate_title) to context.getString(R.string.perm_netstate_desc)
         )
         permissions.forEach { (title, desc) ->
             val itemCol = LinearLayout(context).apply {
@@ -159,10 +163,13 @@ class MoreFragment : Fragment() {
         root.addView(permissionCard)
 
         // ---------- 作者与联系方式 ----------
-        root.addView(sectionCard(
-            context, "作者与联系方式",
-            "作者:Mo\n联系方式:(q群:1019861339)\n\n有问题或想法欢迎来群里聊。"
-        ))
+        root.addView(
+            sectionCard(
+                context,
+                context.getString(R.string.more_author_title),
+                context.getString(R.string.more_author_content)
+            )
+        )
 
         scrollView.addView(root)
         return scrollView

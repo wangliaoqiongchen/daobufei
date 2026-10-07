@@ -90,14 +90,14 @@ class ReminderFragment : Fragment() {
         }
         iconCircle.addView(icon)
         val titleText = TextView(context).apply {
-            text = "自定义提醒"
+            text = context.getString(R.string.reminder_title)
             textSize = 22f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(context.color(R.color.on_accent_container))
             setPadding(0, context.dp(14), 0, context.dp(6))
         }
         val descText = TextView(context).apply {
-            text = "到点弹出系统通知 · 每日重复 · 可随时修改"
+            text = context.getString(R.string.reminder_header_desc)
             textSize = 13f
             setTextColor(context.color(R.color.on_accent_container))
         }
@@ -133,7 +133,7 @@ class ReminderFragment : Fragment() {
             setPadding(0, 0, 0, context.dp(10))
         }
         editStateRow.addView(TextView(context).apply {
-            text = "正在修改已有提醒"
+            text = context.getString(R.string.reminder_editing)
             textSize = 13f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(context.color(R.color.status_warn))
@@ -142,7 +142,7 @@ class ReminderFragment : Fragment() {
             )
         })
         editStateRow.addView(TextView(context).apply {
-            text = "取消"
+            text = context.getString(R.string.action_cancel)
             textSize = 13f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(context.color(R.color.text_secondary))
@@ -153,7 +153,7 @@ class ReminderFragment : Fragment() {
         col.addView(editStateRow)
 
         col.addView(TextView(context).apply {
-            text = "提醒内容"
+            text = context.getString(R.string.reminder_content_title)
             textSize = 16f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(context.color(R.color.text_primary))
@@ -161,7 +161,7 @@ class ReminderFragment : Fragment() {
         })
 
         val tilTitle = TextInputLayout(context).apply {
-            hint = "大标题(必填)"
+            hint = context.getString(R.string.reminder_big_title_hint)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -172,7 +172,7 @@ class ReminderFragment : Fragment() {
         col.addView(tilTitle)
 
         val tilSubtitle = TextInputLayout(context).apply {
-            hint = "小标题(选填)"
+            hint = context.getString(R.string.reminder_small_title_hint)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -189,7 +189,7 @@ class ReminderFragment : Fragment() {
             setPadding(0, context.dp(4), 0, context.dp(14))
         }
         timeRow.addView(TextView(context).apply {
-            text = "提醒时间"
+            text = context.getString(R.string.reminder_time_label)
             textSize = 15f
             setTextColor(context.color(R.color.text_primary))
             layoutParams = LinearLayout.LayoutParams(
@@ -197,7 +197,7 @@ class ReminderFragment : Fragment() {
             )
         })
         timeText = TextView(context).apply {
-            text = formatTime(selectedHour, selectedMinute)
+            text = TimeUtil.hhmm(selectedHour, selectedMinute)
             textSize = 15f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(context.color(R.color.accent))
@@ -207,7 +207,7 @@ class ReminderFragment : Fragment() {
                 showTimePickerDialog(context, selectedHour, selectedMinute) { h, m ->
                     selectedHour = h
                     selectedMinute = m
-                    timeText.text = formatTime(h, m)
+                    timeText.text = TimeUtil.hhmm(h, m)
                 }
             }
         }
@@ -215,7 +215,7 @@ class ReminderFragment : Fragment() {
         col.addView(timeRow)
 
         actionButton = MaterialButton(context).apply {
-            text = "添加提醒"
+            text = context.getString(R.string.reminder_add_button)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -244,7 +244,7 @@ class ReminderFragment : Fragment() {
             setPadding(context.dp(16), context.dp(16), context.dp(16), context.dp(8))
         }
         col.addView(TextView(context).apply {
-            text = "已设置的提醒(点一下可修改)"
+            text = context.getString(R.string.reminder_list_title)
             textSize = 16f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(context.color(R.color.text_primary))
@@ -262,7 +262,7 @@ class ReminderFragment : Fragment() {
         val context = requireContext()
         val title = titleInput.text?.toString()?.trim().orEmpty()
         if (title.isEmpty()) {
-            Toast.makeText(context, "先填写大标题", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.reminder_title_required), Toast.LENGTH_SHORT).show()
             return
         }
         val id = editingId ?: System.currentTimeMillis()
@@ -281,7 +281,9 @@ class ReminderFragment : Fragment() {
         ReminderStore.add(context, reminder)
         ReminderScheduler.schedule(context, reminder)
         Toast.makeText(
-            context, "已设置,每天 ${formatTime(reminder.hour, reminder.minute)} 提醒", Toast.LENGTH_SHORT
+            context,
+            context.getString(R.string.reminder_saved, TimeUtil.hhmm(reminder.hour, reminder.minute)),
+            Toast.LENGTH_SHORT
         ).show()
         exitEditMode()
         titleInput.setText("")
@@ -296,22 +298,22 @@ class ReminderFragment : Fragment() {
         subtitleInput.setText(reminder.subtitle)
         selectedHour = reminder.hour
         selectedMinute = reminder.minute
-        timeText.text = formatTime(reminder.hour, reminder.minute)
-        actionButton.text = "保存修改"
+        timeText.text = TimeUtil.hhmm(reminder.hour, reminder.minute)
+        actionButton.text = getString(R.string.reminder_save_button)
         editStateRow.visibility = View.VISIBLE
         refreshList()
     }
 
     private fun exitEditMode() {
         editingId = null
-        actionButton.text = "添加提醒"
+        actionButton.text = getString(R.string.reminder_add_button)
         editStateRow.visibility = View.GONE
         titleInput.setText("")
         subtitleInput.setText("")
         selectedHour = 8
         selectedMinute = 0
         if (::timeText.isInitialized) {
-            timeText.text = formatTime(selectedHour, selectedMinute)
+            timeText.text = TimeUtil.hhmm(selectedHour, selectedMinute)
         }
         refreshList()
     }
@@ -323,7 +325,7 @@ class ReminderFragment : Fragment() {
         val items = ReminderStore.list(context)
         if (items.isEmpty()) {
             listContainer.addView(TextView(context).apply {
-                text = "还没有提醒,先在上方创建一个"
+                text = context.getString(R.string.reminder_list_empty)
                 textSize = 13f
                 setTextColor(context.color(R.color.text_secondary))
                 setPadding(0, context.dp(4), 0, context.dp(12))
@@ -343,7 +345,7 @@ class ReminderFragment : Fragment() {
             // 点击条目载入修改;删除按钮单独处理
             setOnClickListener {
                 enterEditMode(r)
-                Toast.makeText(context, "已载入,改完点\"保存修改\"", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.reminder_loaded), Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -380,7 +382,7 @@ class ReminderFragment : Fragment() {
             })
         }
         textCol.addView(TextView(context).apply {
-            text = "每天 ${formatTime(r.hour, r.minute)}"
+            text = context.getString(R.string.daily_at, TimeUtil.hhmm(r.hour, r.minute))
             textSize = 11f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(context.color(R.color.accent))
@@ -400,7 +402,7 @@ class ReminderFragment : Fragment() {
                 ReminderScheduler.cancel(context, r.id)
                 ReminderStore.remove(context, r.id)
                 if (editingId == r.id) exitEditMode()
-                Toast.makeText(context, "已删除该提醒", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.reminder_deleted), Toast.LENGTH_SHORT).show()
                 refreshList()
             }
         }
@@ -410,7 +412,4 @@ class ReminderFragment : Fragment() {
         row.addView(deleteIcon)
         return row
     }
-
-    private fun formatTime(hour: Int, minute: Int) =
-        String.format(Locale.ROOT, "%02d:%02d", hour, minute)
 }

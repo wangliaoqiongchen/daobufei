@@ -3,17 +3,17 @@
     <item
         android:id="@+id/nav_vpn"
         android:icon="@drawable/ic_vpn"
-        android:title="VPN" />
+        android:title="@string/tab_vpn" />
     <item
         android:id="@+id/nav_medication"
         android:icon="@drawable/ic_medication"
-        android:title="用药" />
+        android:title="@string/tab_medication" />
     <item
         android:id="@+id/nav_reminder"
         android:icon="@drawable/ic_alarm"
-        android:title="提醒" />
+        android:title="@string/tab_reminder" />
     <item
         android:id="@+id/nav_more"
         android:icon="@drawable/ic_more"
-        android:title="更多" />
+        android:title="@string/tab_more" />
 </menu>

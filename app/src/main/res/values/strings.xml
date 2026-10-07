@@ -1,3 +1,136 @@
 <resources>
     <string name="app_name">岛不废</string>
+
+    <!-- ==================== 通知 ==================== -->
+    <string name="channel_vpn_name">VPN 流体云状态</string>
+    <string name="channel_vpn_desc">VPN 连接期间显示国家和延迟</string>
+    <string name="channel_reminder_name">自定义提醒</string>
+    <string name="channel_reminder_desc">用户自建的定时提醒</string>
+    <string name="channel_medication_name">用药提醒</string>
+    <string name="channel_medication_desc">到点提醒服药</string>
+    <string name="notif_app_running">后台服务运行中</string>
+    <string name="notif_paused">监控已暂停</string>
+    <string name="notif_latency">延迟 %1$dms</string>
+    <string name="notif_timeout_text">延迟超时,节点可能不可用</string>
+    <string name="notif_timeout_chip">超时</string>
+    <string name="notif_action_refresh">刷新</string>
+    <string name="notif_action_pause">暂停</string>
+    <string name="notif_action_resume">继续</string>
+    <string name="notif_action_exit">退出</string>
+    <string name="notif_action_taken">已服</string>
+    <string name="notif_action_dismiss">知道了</string>
+    <string name="notif_med_title">该吃药了 · %1$s</string>
+    <string name="notif_med_text">计划时间 %1$s</string>
+    <string name="notif_default_title">提醒</string>
+    <string name="notif_default_text">定时提醒</string>
+    <string name="notif_default_med_name">药品</string>
+
+    <!-- ==================== 通用 ==================== -->
+    <string name="action_cancel">取消</string>
+    <string name="daily_at">每天 %1$s</string>
+    <string name="status_taken">已服</string>
+    <string name="status_missed">超时</string>
+    <string name="status_pending">待服</string>
+    <string name="med_retake">补服</string>
+    <string name="legend_upcoming">未到/未计划</string>
+    <string name="dash">--</string>
+    <string name="ms_unit">" ms"</string>
+
+    <!-- ==================== VPN 首页 ==================== -->
+    <string name="permission_card_title">通知 / 流体云权限未开启</string>
+    <string name="permission_card_desc">开启通知和流体云权限后,才能在流体云显示 VPN 节点与延迟。</string>
+    <string name="permission_card_action">去开启</string>
+    <string name="stat_country">国家/地区</string>
+    <string name="stat_quality">网络质量</string>
+    <string name="switch_idle_notification">断开时显示待机通知</string>
+    <string name="trend_title">延迟趋势</string>
+    <string name="trend_caption">最近 16 次测量 · 绿 &lt;100ms · 橙 &lt;300ms · 红 ≥300ms</string>
+    <string name="diagnosis_title">IP 诊断</string>
+    <string name="diagnosis_desc">查看当前出口 IP 与网络路由</string>
+    <string name="status_disconnected">未连接</string>
+    <string name="status_paused_monitor">已暂停监控</string>
+    <string name="status_timeout">超时</string>
+    <string name="status_node_unavailable">节点不可用</string>
+    <string name="status_connected">已连接</string>
+    <string name="status_measuring">测速中</string>
+    <string name="quality_good">优秀</string>
+    <string name="quality_fair">良好</string>
+    <string name="quality_bad">较差</string>
+
+    <!-- ==================== 用药 ==================== -->
+    <string name="med_title">用药提醒</string>
+    <string name="med_header_desc">添加药品和服药时间,到点弹通知 · 日历自动记录</string>
+    <string name="med_today_title">今日用药</string>
+    <string name="med_today_caption">到点弹通知后,在这里或通知上点\"已服\"</string>
+    <string name="med_today_empty">还没有药品,先在下方\"药品管理\"里添加</string>
+    <string name="med_list_empty">还没有药品</string>
+    <string name="med_manage_title">药品管理</string>
+    <string name="med_manage_caption">每天的服药时间都会准点提醒</string>
+    <string name="med_name_hint">药品名称(必填)</string>
+    <string name="med_note_hint">服用说明(选填,如:每次 1 粒)</string>
+    <string name="med_times_label">服药时间</string>
+    <string name="med_add_time">+ 添加时间</string>
+    <string name="med_times_empty_hint">还没选时间,点\"+ 添加时间\"(选好会准点提醒)</string>
+    <string name="med_times_selected">已选:%1$s(点时间可删)</string>
+    <string name="med_add_button">添加药品</string>
+    <string name="med_name_required">先填写药品名称</string>
+    <string name="med_time_required">至少添加一个服药时间</string>
+    <string name="med_added">已添加 %1$s,每天 %2$s 提醒</string>
+    <string name="med_deleted">已删除 %1$s</string>
+    <string name="med_calendar_title">服药日历</string>
+    <string name="med_calendar_caption">一格 = 一天 · 竖条 = 当天计划的每次服药</string>
+    <string name="med_month_label">%1$d 年 %2$d 月</string>
+
+    <!-- ==================== 自定义提醒 ==================== -->
+    <string name="reminder_title">自定义提醒</string>
+    <string name="reminder_header_desc">到点弹出系统通知 · 每日重复 · 可随时修改</string>
+    <string name="reminder_editing">正在修改已有提醒</string>
+    <string name="reminder_content_title">提醒内容</string>
+    <string name="reminder_big_title_hint">大标题(必填)</string>
+    <string name="reminder_small_title_hint">小标题(选填)</string>
+    <string name="reminder_time_label">提醒时间</string>
+    <string name="reminder_add_button">添加提醒</string>
+    <string name="reminder_save_button">保存修改</string>
+    <string name="reminder_title_required">先填写大标题</string>
+    <string name="reminder_saved">已设置,每天 %1$s 提醒</string>
+    <string name="reminder_list_title">已设置的提醒(点一下可修改)</string>
+    <string name="reminder_list_empty">还没有提醒,先在上方创建一个</string>
+    <string name="reminder_loaded">已载入,改完点\"保存修改\"</string>
+    <string name="reminder_deleted">已删除该提醒</string>
+    <string name="time_dialog_title">选择时间</string>
+    <string name="dialog_ok">确定</string>
+
+    <!-- ==================== 更多 ==================== -->
+    <string name="more_tagline">版本 %1$s · 流体云工具箱</string>
+    <string name="more_features_title">功能一览</string>
+    <string name="feature_vpn_title">VPN 流体云监控</string>
+    <string name="feature_vpn_desc">连接后在流体云显示节点国旗与实时延迟,支持历史趋势</string>
+    <string name="feature_reminder_title">自定义提醒</string>
+    <string name="feature_reminder_desc">自选标题与时间,到点弹出系统通知,每日重复</string>
+    <string name="feature_med_title">用药提醒</string>
+    <string name="feature_med_desc">多时段提醒 + 服药日历统计</string>
+    <string name="feature_diag_title">IP 诊断</string>
+    <string name="feature_diag_desc">查看当前出口 IP 与网络路由,排查节点是否生效</string>
+    <string name="more_permissions_title">权限说明</string>
+    <string name="perm_notif_title">通知权限</string>
+    <string name="perm_notif_desc">用于在流体云和通知栏显示 VPN 状态与提醒</string>
+    <string name="perm_net_title">网络访问权限</string>
+    <string name="perm_net_desc">用于检测公网 IP、查询节点归属国家、测量延迟</string>
+    <string name="perm_fgs_title">前台服务权限</string>
+    <string name="perm_fgs_desc">用于在后台持续监控,不被系统随意终止</string>
+    <string name="perm_netstate_title">查看网络状态权限</string>
+    <string name="perm_netstate_desc">用于检测当前是否有 VPN 连接</string>
+    <string name="more_author_title">作者与联系方式</string>
+    <string name="more_author_content">作者:Mo\n联系方式:(q群:1019861339)\n\n有问题或想法欢迎来群里聊。</string>
+
+    <!-- ==================== 诊断页 ==================== -->
+    <string name="diag_load_failed">页面加载失败</string>
+    <string name="diag_check_network">请检查网络连接后重试</string>
+    <string name="diag_retry">重新加载</string>
+
+    <!-- ==================== 底栏 ==================== -->
+    <string name="tab_vpn">VPN</string>
+    <string name="tab_medication">用药</string>
+    <string name="tab_reminder">提醒</string>
+    <string name="tab_more">更多</string>
 </resources>

@@ -117,9 +117,9 @@ class VpnFragment : Fragment() {
             ).apply { setMargins(0, 0, 0, context.dp(14)) }
         }
         val (countryCard, countryValueView) =
-            buildStatCard(context, R.drawable.ic_globe, "国家/地区")
+            buildStatCard(context, R.drawable.ic_globe, context.getString(R.string.stat_country))
         val (qualityCard, qualityValueView) =
-            buildStatCard(context, R.drawable.ic_speed, "网络质量")
+            buildStatCard(context, R.drawable.ic_speed, context.getString(R.string.stat_quality))
         countryStatText = countryValueView
         qualityStatText = qualityValueView
         (countryCard.layoutParams as LinearLayout.LayoutParams).apply {
@@ -173,19 +173,19 @@ class VpnFragment : Fragment() {
             setPadding(context.dp(16), context.dp(16), context.dp(16), context.dp(16))
         }
         val titleText = TextView(context).apply {
-            text = "通知 / 流体云权限未开启"
+            text = context.getString(R.string.permission_card_title)
             textSize = 15f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(context.color(R.color.text_primary))
         }
         val descText = TextView(context).apply {
-            text = "开启通知和流体云权限后,才能在流体云显示 VPN 节点与延迟。"
+            text = context.getString(R.string.permission_card_desc)
             textSize = 13f
             setTextColor(context.color(R.color.text_secondary))
             setPadding(0, context.dp(6), 0, context.dp(12))
         }
         val button = MaterialButton(context).apply {
-            text = "去开启"
+            text = context.getString(R.string.permission_card_action)
             textSize = 14f
             setOnClickListener {
                 val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
@@ -278,7 +278,7 @@ class VpnFragment : Fragment() {
         }
         iconBox.addView(icon)
         val label = TextView(context).apply {
-            text = "断开时显示待机通知"
+            text = context.getString(R.string.switch_idle_notification)
             textSize = 15f
             setTextColor(context.color(R.color.text_primary))
             layoutParams = LinearLayout.LayoutParams(
@@ -321,13 +321,13 @@ class VpnFragment : Fragment() {
             setPadding(context.dp(16), context.dp(16), context.dp(16), context.dp(16))
         }
         val titleText = TextView(context).apply {
-            text = "延迟趋势"
+            text = context.getString(R.string.trend_title)
             textSize = 16f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(context.color(R.color.text_primary))
         }
         val captionText = TextView(context).apply {
-            text = "最近 16 次测量 · 绿 <100ms · 橙 <300ms · 红 ≥300ms"
+            text = context.getString(R.string.trend_caption)
             textSize = 11f
             setTextColor(context.color(R.color.text_secondary))
             setPadding(0, context.dp(2), 0, context.dp(10))
@@ -386,13 +386,13 @@ class VpnFragment : Fragment() {
             ).apply { setMargins(context.dp(12), 0, 0, 0) }
         }
         val titleText = TextView(context).apply {
-            text = "IP 诊断"
+            text = context.getString(R.string.diagnosis_title)
             textSize = 15f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(context.color(R.color.text_primary))
         }
         val descText = TextView(context).apply {
-            text = "查看当前出口 IP 与网络路由"
+            text = context.getString(R.string.diagnosis_desc)
             textSize = 12f
             setTextColor(context.color(R.color.text_secondary))
             setPadding(0, context.dp(2), 0, 0)
@@ -434,21 +434,22 @@ class VpnFragment : Fragment() {
 
     private fun updateUi(status: VpnStatus) {
         val context = requireContext()
+        val dash = context.getString(R.string.dash)
 
         if (!status.isConnected) {
             flagImage.setImageDrawable(null)
-            setBigText("--", null, context.color(R.color.text_secondary))
+            setBigText(dash, null, context.color(R.color.text_secondary))
             applyHeroColor(context.color(R.color.bg_idle))
-            setPill("未连接", context.color(R.color.status_idle))
-            countryStatText.text = "--"
-            qualityStatText.text = "--"
+            setPill(context.getString(R.string.status_disconnected), context.color(R.color.status_idle))
+            countryStatText.text = dash
+            qualityStatText.text = dash
             return
         }
 
         if (status.isPaused) {
-            setBigText("--", null, context.color(R.color.text_secondary))
+            setBigText(dash, null, context.color(R.color.text_secondary))
             applyHeroColor(context.color(R.color.bg_idle))
-            setPill("已暂停监控", context.color(R.color.status_idle))
+            setPill(context.getString(R.string.status_paused_monitor), context.color(R.color.status_idle))
             return
         }
 
@@ -462,36 +463,36 @@ class VpnFragment : Fragment() {
 
         when {
             status.isTimeout -> {
-                setBigText("超时", null, context.color(R.color.status_bad))
+                setBigText(context.getString(R.string.status_timeout), null, context.color(R.color.status_bad))
                 applyHeroColor(context.color(R.color.bg_bad))
-                setPill("节点不可用", context.color(R.color.status_bad))
-                qualityStatText.text = "较差"
+                setPill(context.getString(R.string.status_node_unavailable), context.color(R.color.status_bad))
+                qualityStatText.text = context.getString(R.string.quality_bad)
             }
             status.latencyMs != null -> {
-                setBigText("${status.latencyMs}", " ms", context.color(R.color.text_primary))
+                setBigText("${status.latencyMs}", context.getString(R.string.ms_unit), context.color(R.color.text_primary))
                 val (stateColor, heroBg, quality) = when {
                     status.latencyMs < 100 -> Triple(
                         context.color(R.color.status_good),
-                        context.color(R.color.bg_good), "优秀"
+                        context.color(R.color.bg_good), context.getString(R.string.quality_good)
                     )
                     status.latencyMs < 300 -> Triple(
                         context.color(R.color.status_warn),
-                        context.color(R.color.bg_warn), "良好"
+                        context.color(R.color.bg_warn), context.getString(R.string.quality_fair)
                     )
                     else -> Triple(
                         context.color(R.color.status_bad),
-                        context.color(R.color.bg_bad), "较差"
+                        context.color(R.color.bg_bad), context.getString(R.string.quality_bad)
                     )
                 }
                 applyHeroColor(heroBg)
-                setPill("已连接", stateColor)
+                setPill(context.getString(R.string.status_connected), stateColor)
                 qualityStatText.text = quality
             }
             else -> {
-                setBigText("测速中", null, context.color(R.color.text_secondary))
+                setBigText(context.getString(R.string.status_measuring), null, context.color(R.color.text_secondary))
                 applyHeroColor(context.color(R.color.bg_idle))
-                setPill("已连接", context.color(R.color.status_idle))
-                qualityStatText.text = "--"
+                setPill(context.getString(R.string.status_connected), context.color(R.color.status_idle))
+                qualityStatText.text = dash
             }
         }
     }

@@ -73,13 +73,28 @@ object MedicationStore {
 
     // 某天某次服药的状态:已服 / 超时(过了宽限期没点) / 待服
     fun doseState(context: Context, date: LocalDate, time: String, medId: Long): Int {
-        if (isTaken(context, date, time, medId)) return STATE_TAKEN
-        val scheduled = date.atTime(parseTime(time))
-        // 药品添加(id 即创建时间戳)之前就存在的时间点不算"超时",
-        // 记为未计划——否则新加的药,今天早些的次数会立刻全变红
+        return computeDoseState(
+            isTaken = isTaken(context, date, time, medId),
+            scheduled = date.atTime(TimeUtil.parse(time)),
+            createdAtMillis = medId,
+            now = LocalDateTime.now(),
+            graceMinutes = GRACE_MINUTES
+        )
+    }
+
+    // 纯函数版状态判定,可单测:
+    // 已服 > 添加药品(创建时间戳)之前的时间点记未计划 > 过宽限期记超时 > 待服
+    fun computeDoseState(
+        isTaken: Boolean,
+        scheduled: LocalDateTime,
+        createdAtMillis: Long,
+        now: LocalDateTime,
+        graceMinutes: Long
+    ): Int {
+        if (isTaken) return STATE_TAKEN
         val scheduledMillis = scheduled.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        if (scheduledMillis < medId) return STATE_PENDING
-        if (scheduled.plusMinutes(GRACE_MINUTES).isBefore(LocalDateTime.now())) return STATE_MISSED
+        if (scheduledMillis < createdAtMillis) return STATE_PENDING
+        if (scheduled.plusMinutes(graceMinutes).isBefore(now)) return STATE_MISSED
         return STATE_PENDING
     }
 
@@ -132,20 +147,15 @@ object MedicationStore {
         )
     }
 
-    fun nextTriggerAt(time: String): Long {
-        val t = parseTime(time)
-        val now = LocalDateTime.now()
-        var next = now.toLocalDate().atTime(t)
+    fun nextTriggerAt(time: String): Long = nextTriggerAt(time, LocalDateTime.now())
+
+    fun nextTriggerAt(time: String, now: LocalDateTime): Long {
+        var next = now.toLocalDate().atTime(TimeUtil.parse(time))
         if (!next.isAfter(now)) next = next.plusDays(1)
         return next.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
     }
 
     private fun requestCode(medId: Long, time: String) = "${medId}_$time".hashCode()
-
-    private fun parseTime(time: String): LocalTime {
-        val parts = time.split(":")
-        return LocalTime.of(parts[0].toInt(), parts[1].toInt())
-    }
 
     private fun takenKey(date: LocalDate, time: String, medId: Long) =
         "${KEY_TAKEN_PREFIX}${date}_${time}_$medId"

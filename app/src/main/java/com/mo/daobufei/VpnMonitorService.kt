@@ -452,9 +452,8 @@ class VpnMonitorService : Service() {
         val showNotification = SettingsPrefs.isIdleNotificationEnabled(this)
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("岛不废")
-            // 中性文案:这条通知是整个工具箱的常驻底座,以后用药提醒也共用它
-            .setContentText("后台服务运行中")
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(getString(R.string.notif_app_running))
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             // 关闭开关时用最低优先级,通知栏静默存在,不弹横幅、不提示音;开启时保持可见
@@ -467,17 +466,17 @@ class VpnMonitorService : Service() {
     private fun buildPausedNotification(): android.app.Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("岛不废")
-            .setContentText("监控已暂停")
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(getString(R.string.notif_paused))
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSilent(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setRequestPromotedOngoing(true)
-            .setShortCriticalText("已暂停")
+            .setShortCriticalText(getString(R.string.notif_paused))
             .setContentIntent(buildContentIntent())
-            .addAction(buildAction(ACTION_RESUME, R.drawable.ic_play, "继续", REQ_RESUME))
-            .addAction(buildAction(ACTION_EXIT, R.drawable.ic_close, "退出", REQ_EXIT))
+            .addAction(buildAction(ACTION_RESUME, R.drawable.ic_play, getString(R.string.notif_action_resume), REQ_RESUME))
+            .addAction(buildAction(ACTION_EXIT, R.drawable.ic_close, getString(R.string.notif_action_exit), REQ_EXIT))
             .build()
     }
 
@@ -494,11 +493,11 @@ class VpnMonitorService : Service() {
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setRequestPromotedOngoing(true)
             // ColorOS 流体云 chip 右侧的文字就是取这个字段(v1 实测),延迟必须放这里
-            .setShortCriticalText(latestLatency?.let { "${it}ms" } ?: "...")
+            .setShortCriticalText(latestLatency?.let { getString(R.string.notif_latency, it) } ?: "...")
             .setContentIntent(buildContentIntent())
-            .addAction(buildAction(ACTION_REFRESH, R.drawable.ic_refresh, "刷新", REQ_REFRESH))
-            .addAction(buildAction(ACTION_PAUSE, R.drawable.ic_pause, "暂停", REQ_PAUSE))
-            .addAction(buildAction(ACTION_EXIT, R.drawable.ic_close, "退出", REQ_EXIT))
+            .addAction(buildAction(ACTION_REFRESH, R.drawable.ic_refresh, getString(R.string.notif_action_refresh), REQ_REFRESH))
+            .addAction(buildAction(ACTION_PAUSE, R.drawable.ic_pause, getString(R.string.notif_action_pause), REQ_PAUSE))
+            .addAction(buildAction(ACTION_EXIT, R.drawable.ic_close, getString(R.string.notif_action_exit), REQ_EXIT))
 
         if (flagResId != 0) {
             builder.setLargeIcon(getFlagBitmap(flagResId))
@@ -515,18 +514,18 @@ class VpnMonitorService : Service() {
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(if (flagResId != 0) flagResId else R.drawable.ic_notification)
             .setContentTitle("$currentFlag $currentCountryName")
-            .setContentText("延迟超时,节点可能不可用")
+            .setContentText(getString(R.string.notif_timeout_text))
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSilent(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setRequestPromotedOngoing(true)
-            .setShortCriticalText("超时")
+            .setShortCriticalText(getString(R.string.notif_timeout_chip))
             .setContentIntent(buildContentIntent())
-            .addAction(buildAction(ACTION_REFRESH, R.drawable.ic_refresh, "刷新", REQ_REFRESH))
-            .addAction(buildAction(ACTION_PAUSE, R.drawable.ic_pause, "暂停", REQ_PAUSE))
-            .addAction(buildAction(ACTION_EXIT, R.drawable.ic_close, "退出", REQ_EXIT))
+            .addAction(buildAction(ACTION_REFRESH, R.drawable.ic_refresh, getString(R.string.notif_action_refresh), REQ_REFRESH))
+            .addAction(buildAction(ACTION_PAUSE, R.drawable.ic_pause, getString(R.string.notif_action_pause), REQ_PAUSE))
+            .addAction(buildAction(ACTION_EXIT, R.drawable.ic_close, getString(R.string.notif_action_exit), REQ_EXIT))
 
         if (flagResId != 0) {
             builder.setLargeIcon(getFlagBitmap(flagResId))
@@ -585,8 +584,8 @@ class VpnMonitorService : Service() {
 
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
-            CHANNEL_ID, "VPN 流体云状态", NotificationManager.IMPORTANCE_HIGH
-        ).apply { description = "VPN 连接期间显示国家和延迟" }
+            CHANNEL_ID, getString(R.string.channel_vpn_name), NotificationManager.IMPORTANCE_HIGH
+        ).apply { description = getString(R.string.channel_vpn_desc) }
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 

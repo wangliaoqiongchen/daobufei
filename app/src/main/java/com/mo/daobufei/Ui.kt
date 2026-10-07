@@ -86,10 +86,12 @@ fun showTimePickerDialog(
     container.addView(colon)
     container.addView(minutePicker)
     AlertDialog.Builder(context)
-        .setTitle("选择时间")
+        .setTitle(context.getString(R.string.time_dialog_title))
         .setView(container)
-        .setPositiveButton("确定") { _, _ -> onConfirm(hourPicker.value, minutePicker.value) }
-        .setNegativeButton("取消", null)
+        .setPositiveButton(context.getString(R.string.dialog_ok)) { _, _ ->
+            onConfirm(hourPicker.value, minutePicker.value)
+        }
+        .setNegativeButton(context.getString(R.string.action_cancel), null)
         .show()
 }
 

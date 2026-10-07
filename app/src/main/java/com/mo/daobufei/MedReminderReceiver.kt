@@ -21,8 +21,10 @@ class MedReminderReceiver : BroadcastReceiver() {
         if (nm.getNotificationChannel(CHANNEL) == null) {
             nm.createNotificationChannel(
                 NotificationChannel(
-                    CHANNEL, "用药提醒", NotificationManager.IMPORTANCE_HIGH
-                ).apply { description = "到点提醒服药" }
+                    CHANNEL,
+                    context.getString(R.string.channel_medication_name),
+                    NotificationManager.IMPORTANCE_HIGH
+                ).apply { description = context.getString(R.string.channel_medication_desc) }
             )
         }
 
@@ -34,7 +36,7 @@ class MedReminderReceiver : BroadcastReceiver() {
         }
 
         val medId = intent.getLongExtra("medId", 0L)
-        val name = intent.getStringExtra("name") ?: "药品"
+        val name = intent.getStringExtra("name") ?: context.getString(R.string.notif_default_med_name)
         val note = intent.getStringExtra("note").orEmpty()
         val time = intent.getStringExtra("time") ?: "00:00"
         val notifId = MedicationStore.doseNotificationId(time, medId)
@@ -57,8 +59,8 @@ class MedReminderReceiver : BroadcastReceiver() {
 
         val notification = NotificationCompat.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_med_notification)
-            .setContentTitle("该吃药了 · $name")
-            .setContentText(note.ifEmpty { "计划时间 $time" })
+            .setContentTitle(context.getString(R.string.notif_med_title, name))
+            .setContentText(note.ifEmpty { context.getString(R.string.notif_med_text, time) })
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             // 流体云只提升 ongoing 通知:必须 ongoing 才会上岛,chip 右侧显示药名
@@ -66,7 +68,7 @@ class MedReminderReceiver : BroadcastReceiver() {
             .setRequestPromotedOngoing(true)
             .setShortCriticalText(name.take(8))
             .setContentIntent(openApp)
-            .addAction(R.drawable.ic_medication, "已服", takenAction)
+            .addAction(R.drawable.ic_medication, context.getString(R.string.notif_action_taken), takenAction)
             .build()
         NotificationManagerCompat.from(context).notify(notifId, notification)
 

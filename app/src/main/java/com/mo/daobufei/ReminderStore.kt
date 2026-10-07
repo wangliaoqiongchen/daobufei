@@ -75,8 +75,10 @@ object ReminderStore {
 // (系统会显示一个小闹钟图标,对用户可见,适合提醒场景)
 object ReminderScheduler {
 
-    fun nextTriggerAt(hour: Int, minute: Int): Long {
-        val now = LocalDateTime.now()
+    fun nextTriggerAt(hour: Int, minute: Int): Long =
+        nextTriggerAt(hour, minute, LocalDateTime.now())
+
+    fun nextTriggerAt(hour: Int, minute: Int, now: LocalDateTime): Long {
         var next = now.toLocalDate().atTime(hour, minute)
         if (!next.isAfter(now)) next = next.plusDays(1)
         return next.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()

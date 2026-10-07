@@ -22,8 +22,10 @@ class ReminderReceiver : BroadcastReceiver() {
         if (nm.getNotificationChannel(REMINDER_CHANNEL) == null) {
             nm.createNotificationChannel(
                 NotificationChannel(
-                    REMINDER_CHANNEL, "自定义提醒", NotificationManager.IMPORTANCE_HIGH
-                ).apply { description = "用户自建的定时提醒" }
+                    REMINDER_CHANNEL,
+                    context.getString(R.string.channel_reminder_name),
+                    NotificationManager.IMPORTANCE_HIGH
+                ).apply { description = context.getString(R.string.channel_reminder_desc) }
             )
         }
 
@@ -35,7 +37,7 @@ class ReminderReceiver : BroadcastReceiver() {
         }
 
         val id = intent.getLongExtra("id", 0L)
-        val title = intent.getStringExtra("title") ?: "提醒"
+        val title = intent.getStringExtra("title") ?: context.getString(R.string.notif_default_title)
         val subtitle = intent.getStringExtra("subtitle").orEmpty()
         val hour = intent.getIntExtra("hour", 8)
         val minute = intent.getIntExtra("minute", 0)
@@ -53,7 +55,7 @@ class ReminderReceiver : BroadcastReceiver() {
         val notification = NotificationCompat.Builder(context, REMINDER_CHANNEL)
             .setSmallIcon(R.drawable.ic_alarm_notification)
             .setContentTitle(title)
-            .setContentText(subtitle.ifEmpty { "定时提醒" })
+            .setContentText(subtitle.ifEmpty { context.getString(R.string.notif_default_text) })
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             // 流体云只提升 ongoing 通知:必须 ongoing 才会上岛,chip 右侧显示标题
@@ -61,7 +63,7 @@ class ReminderReceiver : BroadcastReceiver() {
             .setRequestPromotedOngoing(true)
             .setShortCriticalText(title.take(8))
             .setContentIntent(openApp)
-            .addAction(R.drawable.ic_close, "知道了", dismiss)
+            .addAction(R.drawable.ic_close, context.getString(R.string.notif_action_dismiss), dismiss)
             .build()
         NotificationManagerCompat.from(context).notify(notifId, notification)
 

@@ -19,7 +19,6 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import java.time.LocalDate
 import java.time.YearMonth
-import java.util.Locale
 
 // 用药提醒:添加药品(每天多个服药时间) → 到点通知提醒(带"已服"按钮) →
 // 今日用药清单确认 → 月视图日历按真实服药记录渲染三色
@@ -108,14 +107,14 @@ class MedicationFragment : Fragment() {
         }
         iconCircle.addView(icon)
         val titleText = TextView(context).apply {
-            text = "用药提醒"
+            text = context.getString(R.string.med_title)
             textSize = 22f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(context.color(R.color.on_accent_container))
             setPadding(0, context.dp(14), 0, context.dp(6))
         }
         val descText = TextView(context).apply {
-            text = "添加药品和服药时间,到点弹通知 · 日历自动记录"
+            text = context.getString(R.string.med_header_desc)
             textSize = 13f
             setTextColor(context.color(R.color.on_accent_container))
         }
@@ -144,7 +143,13 @@ class MedicationFragment : Fragment() {
             orientation = LinearLayout.VERTICAL
             setPadding(context.dp(16), context.dp(16), context.dp(16), context.dp(8))
         }
-        col.addView(cardTitle(context, "今日用药", "到点弹通知后,在这里或通知上点\"已服\""))
+        col.addView(
+            cardTitle(
+                context,
+                context.getString(R.string.med_today_title),
+                context.getString(R.string.med_today_caption)
+            )
+        )
         todayContainer = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
         }
@@ -160,7 +165,7 @@ class MedicationFragment : Fragment() {
         val today = LocalDate.now()
         val meds = MedicationStore.meds(context)
         if (meds.isEmpty()) {
-            todayContainer.addView(hintText(context, "还没有药品,先在下方\"药品管理\"里添加"))
+            todayContainer.addView(hintText(context, context.getString(R.string.med_today_empty)))
             return
         }
         // 汇总今天所有服药:按时间排序
@@ -214,9 +219,9 @@ class MedicationFragment : Fragment() {
 
         // 状态胶囊
         val (statusText, statusColor) = when (state) {
-            MedicationStore.STATE_TAKEN -> "已服" to context.color(R.color.status_good)
-            MedicationStore.STATE_MISSED -> "超时" to context.color(R.color.status_bad)
-            else -> "待服" to context.color(R.color.status_idle)
+            MedicationStore.STATE_TAKEN -> context.getString(R.string.status_taken) to context.color(R.color.status_good)
+            MedicationStore.STATE_MISSED -> context.getString(R.string.status_missed) to context.color(R.color.status_bad)
+            else -> context.getString(R.string.status_pending) to context.color(R.color.status_idle)
         }
         val statusPill = TextView(context).apply {
             text = statusText
@@ -234,7 +239,11 @@ class MedicationFragment : Fragment() {
         // 未服的给一个操作按钮(待服="已服",超时="补服")
         if (state != MedicationStore.STATE_TAKEN) {
             val actionButton = MaterialButton(context).apply {
-                text = if (state == MedicationStore.STATE_MISSED) "补服" else "已服"
+                text = if (state == MedicationStore.STATE_MISSED) {
+                    context.getString(R.string.med_retake)
+                } else {
+                    context.getString(R.string.status_taken)
+                }
                 textSize = 12f
                 isAllCaps = false
                 layoutParams = LinearLayout.LayoutParams(
@@ -271,10 +280,16 @@ class MedicationFragment : Fragment() {
             orientation = LinearLayout.VERTICAL
             setPadding(context.dp(16), context.dp(16), context.dp(16), context.dp(8))
         }
-        col.addView(cardTitle(context, "药品管理", "每天的服药时间都会准点提醒"))
+        col.addView(
+            cardTitle(
+                context,
+                context.getString(R.string.med_manage_title),
+                context.getString(R.string.med_manage_caption)
+            )
+        )
 
         val tilName = TextInputLayout(context).apply {
-            hint = "药品名称(必填)"
+            hint = context.getString(R.string.med_name_hint)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -285,7 +300,7 @@ class MedicationFragment : Fragment() {
         col.addView(tilName)
 
         val tilNote = TextInputLayout(context).apply {
-            hint = "服用说明(选填,如:每次 1 粒)"
+            hint = context.getString(R.string.med_note_hint)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -302,7 +317,7 @@ class MedicationFragment : Fragment() {
             setPadding(0, context.dp(4), 0, context.dp(8))
         }
         timeRow.addView(TextView(context).apply {
-            text = "服药时间"
+            text = context.getString(R.string.med_times_label)
             textSize = 15f
             setTextColor(context.color(R.color.text_primary))
             layoutParams = LinearLayout.LayoutParams(
@@ -310,12 +325,12 @@ class MedicationFragment : Fragment() {
             )
         })
         timeRow.addView(MaterialButton(context).apply {
-            text = "+ 添加时间"
+            text = context.getString(R.string.med_add_time)
             textSize = 13f
             isAllCaps = false
             setOnClickListener {
                 showTimePickerDialog(context, 8, 0) { h, m ->
-                    draftTimes.add(String.format(Locale.ROOT, "%02d:%02d", h, m))
+                    draftTimes.add(TimeUtil.hhmm(h, m))
                     redrawDraftTimes()
                 }
             }
@@ -331,7 +346,7 @@ class MedicationFragment : Fragment() {
         redrawDraftTimes()
 
         col.addView(MaterialButton(context).apply {
-            text = "添加药品"
+            text = context.getString(R.string.med_add_button)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -358,11 +373,11 @@ class MedicationFragment : Fragment() {
         val context = requireContext()
         draftTimesRow.removeAllViews()
         if (draftTimes.isEmpty()) {
-            draftTimesRow.addView(hintText(context, "还没选时间,点\"+ 添加时间\"(点了会弹提醒)"))
+            draftTimesRow.addView(hintText(context, context.getString(R.string.med_times_empty_hint)))
             return
         }
         draftTimesRow.addView(TextView(context).apply {
-            text = "已选:${draftTimes.joinToString("  ")}(点时间可删)"
+            text = context.getString(R.string.med_times_selected, draftTimes.joinToString("  "))
             textSize = 12f
             setTextColor(context.color(R.color.text_secondary))
         })
@@ -390,11 +405,11 @@ class MedicationFragment : Fragment() {
         val context = requireContext()
         val name = nameInput.text?.toString()?.trim().orEmpty()
         if (name.isEmpty()) {
-            Toast.makeText(context, "先填写药品名称", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.med_name_required), Toast.LENGTH_SHORT).show()
             return
         }
         if (draftTimes.isEmpty()) {
-            Toast.makeText(context, "至少添加一个服药时间", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.med_time_required), Toast.LENGTH_SHORT).show()
             return
         }
         val med = Medication(
@@ -405,7 +420,9 @@ class MedicationFragment : Fragment() {
         )
         MedicationStore.add(context, med)   // 内部会把每个时间都挂上每日闹钟
         Toast.makeText(
-            context, "已添加 ${med.name},每天 ${med.times.joinToString("/")} 提醒", Toast.LENGTH_LONG
+            context,
+            context.getString(R.string.med_added, med.name, med.times.joinToString("/")),
+            Toast.LENGTH_LONG
         ).show()
         nameInput.setText("")
         noteInput.setText("")
@@ -420,7 +437,7 @@ class MedicationFragment : Fragment() {
         medListContainer.removeAllViews()
         val items = MedicationStore.meds(context)
         if (items.isEmpty()) {
-            medListContainer.addView(hintText(context, "还没有药品"))
+            medListContainer.addView(hintText(context, context.getString(R.string.med_list_empty)))
             return
         }
         items.forEach { med ->
@@ -455,7 +472,7 @@ class MedicationFragment : Fragment() {
             })
         }
         textCol.addView(TextView(context).apply {
-            text = "每天 ${med.times.joinToString(" / ")}"
+            text = context.getString(R.string.daily_at, med.times.joinToString(" / "))
             textSize = 11f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(context.color(R.color.accent))
@@ -468,7 +485,7 @@ class MedicationFragment : Fragment() {
             imageTintList = android.content.res.ColorStateList.valueOf(context.color(R.color.text_secondary))
             setOnClickListener {
                 MedicationStore.remove(context, med.id)
-                Toast.makeText(context, "已删除 ${med.name}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.med_deleted, med.name), Toast.LENGTH_SHORT).show()
                 refreshAll()
             }
         }
@@ -508,7 +525,11 @@ class MedicationFragment : Fragment() {
         column.removeAllViews()
 
         column.addView(
-            cardTitle(context, "服药日历", "一格 = 一天 · 竖条 = 当天计划的每次服药")
+            cardTitle(
+                context,
+                context.getString(R.string.med_calendar_title),
+                context.getString(R.string.med_calendar_caption)
+            )
         )
         // 图例紧跟说明行
         column.addView(buildLegendRow(context))
@@ -517,7 +538,7 @@ class MedicationFragment : Fragment() {
         val month = YearMonth.from(today)
 
         column.addView(TextView(context).apply {
-            text = "${month.year} 年 ${month.monthValue} 月"
+            text = context.getString(R.string.med_month_label, month.year, month.monthValue)
             textSize = 14f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(context.color(R.color.text_primary))
@@ -574,9 +595,9 @@ class MedicationFragment : Fragment() {
             setPadding(0, 0, 0, context.dp(10))
         }
         val items = listOf(
-            R.color.status_good to "已服",
-            R.color.status_bad to "超时",
-            R.color.card_bg to "未到/未计划"
+            R.color.status_good to context.getString(R.string.status_taken),
+            R.color.status_bad to context.getString(R.string.status_missed),
+            R.color.card_bg to context.getString(R.string.legend_upcoming)
         )
         items.forEach { (colorRes, label) ->
             row.addView(View(context).apply {

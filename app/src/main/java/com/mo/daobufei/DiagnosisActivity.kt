@@ -111,7 +111,7 @@ class DiagnosisActivity : AppCompatActivity() {
             iconCircle.addView(icon)
 
             val titleText = TextView(context).apply {
-                text = "页面加载失败"
+                text = context.getString(R.string.diag_load_failed)
                 textSize = 18f
                 setTypeface(typeface, Typeface.BOLD)
                 setTextColor(context.color(R.color.text_primary))
@@ -119,14 +119,14 @@ class DiagnosisActivity : AppCompatActivity() {
                 setPadding(0, context.dp(16), 0, context.dp(4))
             }
             val descText = TextView(context).apply {
-                text = "请检查网络连接后重试"
+                text = context.getString(R.string.diag_check_network)
                 textSize = 14f
                 setTextColor(context.color(R.color.text_secondary))
                 gravity = android.view.Gravity.CENTER
                 setPadding(0, 0, 0, context.dp(20))
             }
             val retryButton = MaterialButton(context).apply {
-                text = "重新加载"
+                text = context.getString(R.string.diag_retry)
                 // 显式调 setIcon:外层的局部变量 icon 会遮蔽 MaterialButton 的 icon 属性
                 setIcon(context.getDrawable(R.drawable.ic_refresh))
                 setOnClickListener {
