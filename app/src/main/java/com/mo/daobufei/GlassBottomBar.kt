@@ -85,6 +85,13 @@ class ViewContentBackdrop(private val contentView: () -> View) : Backdrop {
         val view = contentView()
         val contentOffset = IntArray(2).also(view::getLocationOnScreen)
         val canvas = drawContext.canvas.nativeCanvas
+        // 先铺一层窗口底色:采样面超出容器顶部/两侧的区域是透明的,
+        // 不铺底的话模糊会把透明当黑处理,出现黑边
+        canvas.drawColor(
+            androidx.core.content.ContextCompat.getColor(
+                view.context, R.color.screen_bg
+            )
+        )
         canvas.save()
         canvas.translate(
             (contentOffset[0] - surfaceOffset.x).toFloat(),
@@ -300,7 +307,7 @@ fun GlassStatusBar(
             .height(stripHeight)
             .drawBackdrop(
                 backdrop = backdrop,
-                shape = { RoundedCornerShape(bottomStart = 20f.dp, bottomEnd = 20f.dp) },
+                shape = { androidx.compose.ui.graphics.RectangleShape },
                 effects = {
                     vibrancy()
                     blur(8f.dp.toPx() * blurProgress.value)
