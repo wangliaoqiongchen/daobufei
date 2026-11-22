@@ -19,6 +19,9 @@ import android.widget.NumberPicker
 import android.widget.TextView
 import androidx.annotation.ColorRes
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import java.util.Locale
 
 // UI 通用工具:dp 换算、按深浅色取色 token、胶囊/圆形背景
@@ -48,6 +51,19 @@ fun Context.roundDrawable(color: Int, cornerDp: Float): GradientDrawable = Gradi
 fun View.clipToBackgroundShape() {
     clipToOutline = true
     outlineProvider = ViewOutlineProvider.BACKGROUND
+}
+
+// 页面根视图把状态栏高度折算成顶部内边距:
+// 滚动内容可穿透到顶部磨砂条后面,首项仍从条下开始
+fun View.applyTopInset(extraTopDp: Int = 0) {
+    ViewCompat.setOnApplyWindowInsetsListener(this) { view, insets ->
+        val bars = insets.getInsets(
+            WindowInsetsCompat.Type.systemBars() or
+                WindowInsetsCompat.Type.displayCutout()
+        )
+        view.updatePadding(top = bars.top + view.context.dp(extraTopDp))
+        insets
+    }
 }
 
 // 点击输入框以外的区域时收起键盘并清除焦点

@@ -6,13 +6,24 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
+import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
-import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -21,6 +32,9 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentContainerView
+import com.kyant.backdrop.backdrops.LayerBackdrop
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 
 class MainActivity : AppCompatActivity() {
 
@@ -35,9 +49,6 @@ class MainActivity : AppCompatActivity() {
     private val scrollStopHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private var activeFragment: Fragment? = null
     private lateinit var container: FragmentContainerView
-    private lateinit var glassBarView: ComposeView
-    private lateinit var topGlassView: ComposeView
-    private lateinit var sharedBackdrop: ViewContentBackdrop
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,50 +70,39 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
         container = findViewById(R.id.fragmentContainer)
-        glassBarView = findViewById(R.id.glassBarView)
-        topGlassView = findViewById(R.id.topGlassView)
-        // 底栏与顶部磨砂条共用同一个"页面内容"backdrop
-        sharedBackdrop = ViewContentBackdrop { container }
 
-        // 系统栏/键盘高度折算成容器内边距:顶部不被状态栏压住,键盘弹出时避让
+        // 玻璃层(底栏+顶条)挂为 fragment 容器的兄弟节点;
+        // 容器在 onCreate 时已在真实层级里(onStart 前),FragmentManager 找得到,
+        // 首帧时再由 AndroidView 把容器重定父级进 Compose 树,作为 backdrop 源
+        val glassLayer = ComposeView(this).apply {
+            setContent {
+                AppRoot(
+                    container = container,
+                    isScrolling = isScrolling.value,
+                    selected = selectedTab.intValue,
+                    onSelected = { index -> onTabSelected(index) }
+                )
+            }
+        }
+        addContentView(
+            glassLayer,
+            android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        )
+
+        // 键盘弹出时避让(fragment 内容自己处理状态栏 inset)
         ViewCompat.setOnApplyWindowInsetsListener(container) { view, insets ->
-            val bars = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars() or
-                    WindowInsetsCompat.Type.displayCutout()
-            )
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            view.updatePadding(top = bars.top, bottom = ime.bottom)
-            insets
-        }
-        // 玻璃底栏抬到手势条上方
-        ViewCompat.setOnApplyWindowInsetsListener(glassBarView) { view, insets ->
-            val nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
-            view.updatePadding(bottom = nav.bottom)
+            view.updatePadding(bottom = ime.bottom)
             insets
         }
 
-        // 玻璃底栏:backdrop 是坐标依赖的(每个玻璃表面绘制时实时采样容器内容);
-        // 页面滚动时通过 OnScrollChangedListener 触发重画,保持折射实时
-        glassBarView.setContent {
-            GlassBottomBar(
-                selected = selectedTab.intValue,
-                onSelected = { index -> onTabSelected(index) },
-                contentView = { container },
-                backdrop = sharedBackdrop
-            )
-        }
-        // 顶部状态栏磨砂条:滑动时模糊,停止后淡出恢复
-        topGlassView.setContent {
-            GlassStatusBar(
-                backdrop = sharedBackdrop,
-                isScrolling = isScrolling.value
-            )
-        }
+        // 滚动状态驱动顶部磨砂条的模糊淡入淡出
         container.viewTreeObserver.addOnScrollChangedListener {
-            // 滚动中:置为滑动状态并刷新两块玻璃;180ms 无滚动事件视为停止
+            // 滚动中:置为滑动状态;180ms 无滚动事件视为停止
             isScrolling.value = true
-            glassBarView.invalidate()
-            topGlassView.invalidate()
             scrollStopHandler.removeCallbacksAndMessages(null)
             scrollStopHandler.postDelayed({ isScrolling.value = false }, 180)
         }
@@ -201,5 +201,46 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val KEY_TAB = "tab"
+    }
+}
+
+// 全屏根:页面内容(容器)通过 AndroidView 承载并登记为 backdrop 源,
+// 库会帧同步采样它——磨砂不会随机变透明;顶条/底栏悬浮其上
+@Composable
+private fun AppRoot(
+    container: FragmentContainerView,
+    isScrolling: Boolean,
+    selected: Int,
+    onSelected: (Int) -> Unit
+) {
+    val backdrop: LayerBackdrop = rememberLayerBackdrop()
+
+    Box(Modifier.fillMaxSize()) {
+        AndroidView(
+            factory = {
+                // 容器在 onCreate 时已挂在 XML 层级里(onStart 前 FragmentManager 需要),
+                // 这里重定父级进 Compose 树
+                (container.parent as? ViewGroup)?.removeView(container)
+                container
+            },
+            modifier = Modifier
+                .fillMaxSize()
+                .layerBackdrop(backdrop)
+        )
+        GlassStatusBar(
+            backdrop = backdrop,
+            isScrolling = isScrolling,
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
+        GlassBottomBar(
+            selected = selected,
+            onSelected = onSelected,
+            contentView = { container },
+            backdrop = backdrop,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .windowInsetsPadding(WindowInsets.navigationBars)
+                .padding(horizontal = 12.dp, vertical = 16.dp)
+        )
     }
 }
