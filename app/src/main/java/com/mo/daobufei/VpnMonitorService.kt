@@ -67,7 +67,7 @@ class VpnMonitorService : Service() {
     private var countryQueryFails = 0
 
     // ---- 延迟 ----
-    private var latencyIntervalMs = 10_000L         // 息屏后调大到 30s 省电
+    private var heartbeatTick = 0                   // 灭屏心跳计数,每 3 次顺带刷新一次国家
     private var latestLatency: Long? = null         // 平滑后的显示值(median-3)
     private var latencyTimeout = false
     // 首个样本略偏高(TLS 握手),median-3 窗口会很快把它稀释掉,不做特殊丢弃
@@ -79,9 +79,8 @@ class VpnMonitorService : Service() {
 
     private val flagBitmapCache = HashMap<Int, Bitmap>()
 
-    // 常驻 CPU 锁:灭屏/充电时设备会深度休眠,不持锁的话 delay() 定时不会唤醒 CPU,
-    // 测量循环停摆(流体云冻住、后台不刷新)。配合用户的电池白名单保证后台常转
-    private lateinit var wakeLock: android.os.PowerManager.WakeLock
+    // 常驻 CPU 锁已移除:亮屏时 CPU 本来就醒着,灭屏改用 60 秒精确闹钟心跳
+    // (每次只醒来测一次就睡),比 24 小时持锁省电一个数量级
 
     private val vpnCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) = checkVpnStatus("onAvailable 触发")
@@ -90,12 +89,23 @@ class VpnMonitorService : Service() {
             checkVpnStatus("onCapabilitiesChanged 触发")
     }
 
-    // 息屏后流体云基本不看,降频测量省电;亮屏立即恢复
+    // 省电策略:亮屏 10 秒循环(CPU 本来就醒着,零额外成本);灭屏停掉循环,
+    // 改用 60 秒精确闹钟心跳——每次只醒来测一次就睡,比常驻 CPU 锁省电一个数量级
     private val screenReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
-                Intent.ACTION_SCREEN_OFF -> latencyIntervalMs = 30_000L
-                Intent.ACTION_SCREEN_ON -> latencyIntervalMs = 10_000L
+                Intent.ACTION_SCREEN_OFF -> {
+                    if (lastVpnState && !monitoringPaused) {
+                        stopLatencyLoop()
+                        scheduleHeartbeat()
+                    }
+                }
+                Intent.ACTION_SCREEN_ON -> {
+                    if (lastVpnState && !monitoringPaused) {
+                        cancelHeartbeat()
+                        startLatencyLoop()
+                    }
+                }
             }
         }
     }
@@ -103,12 +113,6 @@ class VpnMonitorService : Service() {
     override fun onCreate() {
         super.onCreate()
         connectivityManager = getSystemService(ConnectivityManager::class.java)
-        wakeLock = getSystemService(android.os.PowerManager::class.java)
-            .newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "daobufei:VpnMonitor")
-            .apply {
-                setReferenceCounted(false)
-                acquire()
-            }
         createNotificationChannel()
 
         startForeground(LIVE_UPDATE_NOTIFICATION_ID, buildIdleNotification())
@@ -130,7 +134,7 @@ class VpnMonitorService : Service() {
                 checkVpnStatus("手动刷新")
                 if (lastVpnState) {
                     fetchCountryInfo()
-                    startLatencyLoop()
+                    enterMonitorMode()
                 }
             }
             ACTION_PAUSE -> {
@@ -141,7 +145,7 @@ class VpnMonitorService : Service() {
             }
             ACTION_RESUME -> {
                 monitoringPaused = false
-                if (lastVpnState) startLatencyLoop()
+                if (lastVpnState) enterMonitorMode()
                 renderNotification()
                 publishUiState()
             }
@@ -157,11 +161,31 @@ class VpnMonitorService : Service() {
                 if (!lastVpnState) renderNotification()
             }
             ACTION_HEARTBEAT -> {
-                // 心跳闹钟解冻后:确认测量循环活着、刷新流体云,再排下一次
-                if (lastVpnState) {
-                    if (latencyJob?.isActive != true) startLatencyLoop()
-                    renderNotification()
-                    scheduleHeartbeat()
+                if (lastVpnState && !monitoringPaused) {
+                    val pm = getSystemService(android.os.PowerManager::class.java)
+                    if (pm?.isInteractive == true) {
+                        // 亮屏了:回 10 秒循环模式
+                        cancelHeartbeat()
+                        startLatencyLoop()
+                    } else {
+                        // 灭屏心跳:醒来测一次+渲染,再排下一次(每 3 次顺带刷新一次国家)
+                        heartbeatTick++
+                        serviceScope.launch {
+                            val gen = generation
+                            val raw = withContext(Dispatchers.IO) { measureLatency() }
+                            if (gen != generation) return@launch
+                            if (raw != null) {
+                                pushLatencySample(raw)
+                                latencyTimeout = false
+                            } else {
+                                latencyTimeout = true
+                            }
+                            if (heartbeatTick % 3 == 0) fetchCountryInfo()
+                            renderNotification()
+                            publishUiState()
+                            scheduleHeartbeat()
+                        }
+                    }
                 }
             }
         }
@@ -170,9 +194,6 @@ class VpnMonitorService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        if (::wakeLock.isInitialized && wakeLock.isHeld) {
-            wakeLock.release()
-        }
         cancelHeartbeat()
         connectivityManager.unregisterNetworkCallback(vpnCallback)
         unregisterReceiver(screenReceiver)
@@ -228,9 +249,13 @@ class VpnMonitorService : Service() {
         countryQueryFails = 0
         nextCountryAttemptAt = 0L
         Log.d(TAG, "VPN 已连接,开始监控")
-        scheduleHeartbeat()
         fetchCountryInfo()
-        startLatencyLoop()
+        // 亮屏进 10 秒循环;灭屏状态连接则直接进心跳模式
+        if (getSystemService(android.os.PowerManager::class.java)?.isInteractive == true) {
+            startLatencyLoop()
+        } else {
+            scheduleHeartbeat()
+        }
         publishUiState()
     }
 
@@ -243,7 +268,6 @@ class VpnMonitorService : Service() {
         lastThree.clear()
         recentSamples.clear()
         _latencyHistory.value = emptyList()
-        latencyIntervalMs = 10_000L
         cancelHeartbeat()
         renderNotification()
         _vpnStatus.value = VpnStatus(isConnected = false)
@@ -394,7 +418,7 @@ class VpnMonitorService : Service() {
                 }
                 renderNotification()
                 publishUiState()
-                delay(latencyIntervalMs)
+                delay(LOOP_INTERVAL_MS)
             }
         }
     }
@@ -430,7 +454,17 @@ class VpnMonitorService : Service() {
 
     // ==================== 保活心跳 ====================
 
-    // 每 2 分钟的精确闹钟心跳:精确闹钟不受 Doze/应用冻结限制,到点会把被
+    // 按当前亮灭屏状态进入正确的监控模式:亮屏=10 秒循环,灭屏=60 秒心跳
+    private fun enterMonitorMode() {
+        if (getSystemService(android.os.PowerManager::class.java)?.isInteractive == true) {
+            cancelHeartbeat()
+            startLatencyLoop()
+        } else {
+            scheduleHeartbeat()
+        }
+    }
+
+    // 每 60 秒的精确闹钟心跳:精确闹钟不受 Doze/应用冻结限制,到点会把被
     // 冻结的进程解冻一次,配合服务里的检查让测量循环在充电灭屏场景下也活着
     private fun scheduleHeartbeat() {
         val am = getSystemService(AlarmManager::class.java) ?: return
@@ -532,7 +566,7 @@ class VpnMonitorService : Service() {
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(if (flagResId != 0) flagResId else R.drawable.ic_notification)
             .setContentTitle("$currentFlag $currentCountryName")
-            .setContentText("延迟 ${latestLatency ?: "--"}ms")
+            .setContentText(getString(R.string.notif_latency, latestLatency ?: 0))
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSilent(true)
@@ -540,7 +574,10 @@ class VpnMonitorService : Service() {
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setRequestPromotedOngoing(true)
             // ColorOS 流体云 chip 右侧的文字就是取这个字段(v1 实测),延迟必须放这里
-            .setShortCriticalText(latestLatency?.let { getString(R.string.notif_latency, it) } ?: "...")
+            .setShortCriticalText(
+                latestLatency?.let { getString(R.string.notif_latency, it) }
+                    ?: getString(R.string.notif_measuring)
+            )
             .setContentIntent(buildContentIntent())
             .addAction(buildAction(ACTION_REFRESH, R.drawable.ic_refresh, getString(R.string.notif_action_refresh), REQ_REFRESH))
             .addAction(buildAction(ACTION_PAUSE, R.drawable.ic_pause, getString(R.string.notif_action_pause), REQ_PAUSE))
@@ -645,7 +682,8 @@ class VpnMonitorService : Service() {
         private const val COUNTRY_BACKOFF_MAX_MS = 120_000L
         private const val RECENT_SAMPLE_MAX = 16
         private const val PROGRESS_BAR_MAX = 8
-        private const val HEARTBEAT_INTERVAL_MS = 2 * 60 * 1000L
+        private const val LOOP_INTERVAL_MS = 10_000L        // 亮屏测量间隔
+        private const val HEARTBEAT_INTERVAL_MS = 60_000L   // 灭屏心跳间隔,想更实时可调小(更费电)
 
         private const val ACTION_REFRESH = "com.mo.daobufei.action.REFRESH"
         // 暂停/继续用两个显式动作而不是一个 toggle:流体云和抽屉两层视图可能重复投递,

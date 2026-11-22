@@ -19,7 +19,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentContainerView
-import com.kyant.backdrop.backdrops.rememberCanvasBackdrop
 
 class MainActivity : AppCompatActivity() {
 
@@ -66,27 +65,13 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        // 玻璃底栏:CanvasBackdrop 把容器内容按屏幕位置画进玻璃做折射;
+        // 玻璃底栏:backdrop 是坐标依赖的(每个玻璃表面绘制时实时采样容器内容);
         // 页面滚动时通过 OnScrollChangedListener 触发重画,保持折射实时
         glassBarView.setContent {
-            val backdrop = rememberCanvasBackdrop {
-                val containerLoc = IntArray(2)
-                val barLoc = IntArray(2)
-                container.getLocationOnScreen(containerLoc)
-                glassBarView.getLocationOnScreen(barLoc)
-                val canvas = drawContext.canvas.nativeCanvas
-                canvas.save()
-                canvas.translate(
-                    (containerLoc[0] - barLoc[0]).toFloat(),
-                    (containerLoc[1] - barLoc[1]).toFloat()
-                )
-                container.draw(canvas)
-                canvas.restore()
-            }
             GlassBottomBar(
                 selected = selectedTab.intValue,
                 onSelected = { index -> onTabSelected(index) },
-                backdrop = backdrop
+                contentView = { container }
             )
         }
         container.viewTreeObserver.addOnScrollChangedListener {

@@ -10,8 +10,9 @@
     <string name="channel_medication_desc">到点提醒服药</string>
     <string name="notif_app_running">后台服务运行中</string>
     <string name="notif_paused">监控已暂停</string>
-    <string name="notif_latency">延迟 %1$dms</string>
-    <string name="notif_timeout_text">延迟超时,节点可能不可用</string>
+    <string name="notif_latency">%1$dms</string>
+    <string name="notif_timeout_text">超时</string>
+    <string name="notif_measuring">测量中</string>
     <string name="notif_timeout_chip">超时</string>
     <string name="notif_action_refresh">刷新</string>
     <string name="notif_action_pause">暂停</string>

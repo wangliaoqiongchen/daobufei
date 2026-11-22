@@ -39,6 +39,8 @@ class DiagnosisActivity : AppCompatActivity() {
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
             settings.javaScriptEnabled = true
+            // 诊断页跟随系统深色模式(Android 13+ 算法加深)
+            settings.isAlgorithmicDarkeningAllowed = true
             webViewClient = object : WebViewClient() {
                 override fun onReceivedError(
                     view: WebView?,
