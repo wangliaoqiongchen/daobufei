@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,26 +36,22 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.GraphicsLayerScope
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.positionOnScreen
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
-import com.kyant.backdrop.backdrops.rememberCombinedBackdrop
-import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
-import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
-import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.Shadow
 import com.kyant.shapes.Capsule
 import kotlinx.coroutines.launch
@@ -69,9 +66,8 @@ private val bottomTabs = listOf(
     TabItem(R.drawable.ic_more, R.string.tab_more)
 )
 
-// 坐标依赖的 Backdrop:每个玻璃表面绘制时,把容器(View)内容按
-// "表面在屏幕上的位置"平移后画进来——整条底栏和选中胶囊各自带坐标,
-// 不会出现"第一个正常其他偏移"
+// 坐标依赖的 Backdrop:玻璃面板绘制时,把容器(View)内容按
+// "面板在屏幕上的位置"平移后画进来,磨砂采样的是真实页面内容
 class ViewContentBackdrop(private val contentView: () -> View) : Backdrop {
 
     override val isCoordinatesDependent: Boolean = true
@@ -95,10 +91,8 @@ class ViewContentBackdrop(private val contentView: () -> View) : Backdrop {
     }
 }
 
-// 液态玻璃底栏(参考 Kyant0/AndroidLiquidGlass catalog 的 LiquidBottomTabs):
-// 整条胶囊 vibrancy+blur+lens 折射页面内容;选中胶囊用
-// 组合 backdrop(页面内容 + 隐藏 tab 内容副本)折射出 tab 内容,
-// 支持点击与拖动,松手弹簧归位
+// 液态玻璃底栏:玻璃面板只负责磨砂(vibrancy+blur,无 lens 防滚动重影);
+// 选中指示器是普通 Compose 元素(品牌绿圆角),弹簧滑动 + 可拖动,松手归位
 @Composable
 fun GlassBottomBar(
     selected: Int,
@@ -107,8 +101,8 @@ fun GlassBottomBar(
     modifier: Modifier = Modifier
 ) {
     val isLight = !isSystemInDarkTheme()
-    // 玻璃要"立得住"靠三重对比:更亮的底色 + 亮色描边 + 投影(颜色相近的背景上,
-    // 单靠半透明底色在同色系背景上不可见,数学上色差只有几个灰阶)
+    // 玻璃要"立得住"靠三重对比:更亮的底色 + 亮色描边 + 投影
+    // (同色系背景上单靠半透明底色不可见,数学上色差只有几个灰阶)
     val containerColor =
         if (isLight) Color(0xFFFFFFFF).copy(alpha = 0.72f)
         else Color(0xFF000000).copy(alpha = 0.55f)
@@ -121,7 +115,6 @@ fun GlassBottomBar(
     val accent = colorResource(R.color.accent)
     val accentContainer = colorResource(R.color.accent_container)
     val backdrop = remember { ViewContentBackdrop(contentView) }
-    val tabsBackdrop = rememberLayerBackdrop()
     val scope = rememberCoroutineScope()
 
     BoxWithConstraints(modifier, contentAlignment = Alignment.CenterStart) {
@@ -133,14 +126,12 @@ fun GlassBottomBar(
         val pillOffset = remember { Animatable(0f) }
         val pillScale = remember { Animatable(1f) }
 
-        // 点 tab 选中 → 胶囊弹簧滑过去
+        // 点 tab 选中 → 指示器弹簧滑过去
         LaunchedEffect(selected) {
             pillOffset.animateTo(selected * tabWidth, spring(dampingRatio = 0.9f, stiffness = 500f))
         }
 
-        // ---------- 主行:玻璃胶囊 + 四个 tab ----------
-        // 只用 vibrancy+blur,不加 lens:lens 的折射位移会在滚动时产生重影;
-        // 折射细节留给选中胶囊的小面积透镜
+        // ---------- 1) 玻璃面板:只做磨砂,无子内容 ----------
         Row(
             Modifier
                 .drawBackdrop(
@@ -166,8 +157,60 @@ fun GlassBottomBar(
                 )
                 .height(64f.dp)
                 .fillMaxWidth()
-                .padding(horizontal = 4f.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 4f.dp)
+        ) {}
+
+        // ---------- 2) 选中指示器:普通元素,随弹簧偏移,可拖动 ----------
+        Box(
+            Modifier
+                .padding(horizontal = 4f.dp)
+                .graphicsLayer {
+                    translationX = pillOffset.value
+                    scaleX = pillScale.value
+                    scaleY = pillScale.value
+                }
+                .height(56f.dp)
+                .fillMaxWidth(1f / bottomTabs.size)
+                .padding(horizontal = 6f.dp, vertical = 4f.dp)
+                .background(
+                    accentContainer.copy(alpha = 0.9f),
+                    RoundedCornerShape(20f.dp)
+                )
+        )
+
+        // ---------- 3) 内容层:图标 + 文字 + 点击 + 拖动手势 ----------
+        Row(
+            Modifier
+                .height(64f.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 4f.dp)
+                .pointerInput(tabWidth) {
+                    detectDragGestures(
+                        onDragStart = {
+                            scope.launch { pillScale.animateTo(1.12f, spring(stiffness = 500f)) }
+                        },
+                        onDrag = { change, dragAmount ->
+                            change.consume()
+                            scope.launch { pillOffset.snapTo(pillOffset.value + dragAmount.x) }
+                        },
+                        onDragEnd = {
+                            val nearest = (pillOffset.value / tabWidth)
+                                .roundToInt()
+                                .coerceIn(0, bottomTabs.size - 1)
+                            onSelected(nearest)
+                            scope.launch {
+                                pillScale.animateTo(1f, spring(stiffness = 500f))
+                                pillOffset.animateTo(
+                                    nearest * tabWidth,
+                                    spring(dampingRatio = 0.85f, stiffness = 500f)
+                                )
+                            }
+                        },
+                        onDragCancel = {
+                            scope.launch { pillScale.animateTo(1f, spring(stiffness = 500f)) }
+                        }
+                    )
+                }
         ) {
             bottomTabs.forEachIndexed { index, tab ->
                 val isSelected = index == selected
@@ -205,79 +248,5 @@ fun GlassBottomBar(
                 }
             }
         }
-
-        // ---------- 隐藏的 tab 内容副本:给选中胶囊的透镜提供采样源(避免灰块) ----------
-        Row(
-            Modifier
-                .alpha(0f)
-                .layerBackdrop(tabsBackdrop)
-                .height(56f.dp)
-                .fillMaxWidth()
-                .graphicsLayer(colorFilter = ColorFilter.tint(accent))
-                .padding(horizontal = 4f.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            bottomTabs.forEach { tab ->
-                Box(
-                    Modifier.weight(1f).height(56f.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(painterResource(tab.iconRes), null, Modifier.size(22f.dp))
-                }
-            }
-        }
-
-        // ---------- 选中胶囊:可拖动,按住微放大(下压感),松手弹簧归位到最近 tab ----------
-        Box(
-            Modifier
-                .padding(horizontal = 4f.dp)
-                .graphicsLayer {
-                    translationX = pillOffset.value
-                    scaleX = pillScale.value
-                    scaleY = pillScale.value
-                }
-                .pointerInput(tabWidth) {
-                    detectDragGestures(
-                        onDragStart = {
-                            scope.launch { pillScale.animateTo(1.12f, spring(stiffness = 500f)) }
-                        },
-                        onDrag = { change, dragAmount ->
-                            change.consume()
-                            scope.launch { pillOffset.snapTo(pillOffset.value + dragAmount.x) }
-                        },
-                        onDragEnd = {
-                            val nearest = (pillOffset.value / tabWidth)
-                                .roundToInt()
-                                .coerceIn(0, bottomTabs.size - 1)
-                            onSelected(nearest)
-                            scope.launch {
-                                pillScale.animateTo(1f, spring(stiffness = 500f))
-                                pillOffset.animateTo(
-                                    nearest * tabWidth,
-                                    spring(dampingRatio = 0.85f, stiffness = 500f)
-                                )
-                            }
-                        },
-                        onDragCancel = {
-                            scope.launch { pillScale.animateTo(1f, spring(stiffness = 500f)) }
-                        }
-                    )
-                }
-                            .drawBackdrop(
-                                backdrop = backdrop,
-                                shape = { Capsule() },
-                                effects = {
-                                    lens(10f.dp.toPx(), 14f.dp.toPx())
-                                },
-                                highlight = { Highlight.Default },
-                                shadow = { Shadow(alpha = 0.3f) },
-                                onDrawSurface = {
-                                    // 选中态用品牌绿玻璃,对齐旧版 Material 的选中指示器
-                                    drawRect(accentContainer.copy(alpha = 0.6f))
-                                }
-                            )
-                .height(56f.dp)
-                .fillMaxWidth(1f / bottomTabs.size)
-        )
     }
 }
