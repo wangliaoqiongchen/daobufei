@@ -1,6 +1,7 @@
 package com.mo.daobufei
 
 import android.annotation.SuppressLint
+import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -155,6 +156,14 @@ class VpnMonitorService : Service() {
                 // 用户切了"断开时显示待机通知"开关:立即按新配置重发,不等下次状态变化
                 if (!lastVpnState) renderNotification()
             }
+            ACTION_HEARTBEAT -> {
+                // 心跳闹钟解冻后:确认测量循环活着、刷新流体云,再排下一次
+                if (lastVpnState) {
+                    if (latencyJob?.isActive != true) startLatencyLoop()
+                    renderNotification()
+                    scheduleHeartbeat()
+                }
+            }
         }
         return START_STICKY
     }
@@ -164,6 +173,7 @@ class VpnMonitorService : Service() {
         if (::wakeLock.isInitialized && wakeLock.isHeld) {
             wakeLock.release()
         }
+        cancelHeartbeat()
         connectivityManager.unregisterNetworkCallback(vpnCallback)
         unregisterReceiver(screenReceiver)
         stopLatencyLoop()
@@ -218,6 +228,7 @@ class VpnMonitorService : Service() {
         countryQueryFails = 0
         nextCountryAttemptAt = 0L
         Log.d(TAG, "VPN 已连接,开始监控")
+        scheduleHeartbeat()
         fetchCountryInfo()
         startLatencyLoop()
         publishUiState()
@@ -233,6 +244,7 @@ class VpnMonitorService : Service() {
         recentSamples.clear()
         _latencyHistory.value = emptyList()
         latencyIntervalMs = 10_000L
+        cancelHeartbeat()
         renderNotification()
         _vpnStatus.value = VpnStatus(isConnected = false)
         Log.d(TAG, "VPN 已断开,流体云已重置")
@@ -416,6 +428,41 @@ class VpnMonitorService : Service() {
         _latencyHistory.value = recentSamples.toList()
     }
 
+    // ==================== 保活心跳 ====================
+
+    // 每 2 分钟的精确闹钟心跳:精确闹钟不受 Doze/应用冻结限制,到点会把被
+    // 冻结的进程解冻一次,配合服务里的检查让测量循环在充电灭屏场景下也活着
+    private fun scheduleHeartbeat() {
+        val am = getSystemService(AlarmManager::class.java) ?: return
+        val pi = heartbeatPendingIntent()
+        try {
+            am.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                System.currentTimeMillis() + HEARTBEAT_INTERVAL_MS,
+                pi
+            )
+        } catch (e: SecurityException) {
+            // 未获精确闹钟授权时退化为可延迟窗口闹钟
+            am.setWindow(
+                AlarmManager.RTC_WAKEUP,
+                System.currentTimeMillis() + HEARTBEAT_INTERVAL_MS,
+                HEARTBEAT_INTERVAL_MS,
+                pi
+            )
+        }
+    }
+
+    private fun cancelHeartbeat() {
+        getSystemService(AlarmManager::class.java)?.cancel(heartbeatPendingIntent())
+    }
+
+    private fun heartbeatPendingIntent(): PendingIntent =
+        PendingIntent.getBroadcast(
+            this, 0,
+            Intent(this, HeartbeatReceiver::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
     // ==================== 状态发布(UI) ====================
 
     private fun publishUiState() {
@@ -598,6 +645,7 @@ class VpnMonitorService : Service() {
         private const val COUNTRY_BACKOFF_MAX_MS = 120_000L
         private const val RECENT_SAMPLE_MAX = 16
         private const val PROGRESS_BAR_MAX = 8
+        private const val HEARTBEAT_INTERVAL_MS = 2 * 60 * 1000L
 
         private const val ACTION_REFRESH = "com.mo.daobufei.action.REFRESH"
         // 暂停/继续用两个显式动作而不是一个 toggle:流体云和抽屉两层视图可能重复投递,
@@ -607,6 +655,8 @@ class VpnMonitorService : Service() {
         private const val ACTION_EXIT = "com.mo.daobufei.action.EXIT"
         // 需要被其它组件(设置开关)发起,所以公开
         const val ACTION_APPLY_IDLE_SETTING = "com.mo.daobufei.action.APPLY_IDLE_SETTING"
+        // 心跳闹钟 → HeartbeatReceiver → 本服务
+        const val ACTION_HEARTBEAT = "com.mo.daobufei.action.HEARTBEAT"
 
         private const val REQ_REFRESH = 1
         private const val REQ_PAUSE = 2

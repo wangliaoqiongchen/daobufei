@@ -122,6 +122,15 @@
     <string name="perm_netstate_desc">用于检测当前是否有 VPN 连接</string>
     <string name="more_author_title">作者与联系方式</string>
     <string name="more_author_content">作者:Mo\n联系方式:(q群:1019861339)\n\n有问题或想法欢迎来群里聊。</string>
+    <string name="keepalive_title">后台保活</string>
+    <string name="keepalive_desc">灭屏/充电时系统会深度休眠并冻结应用。忽略电池优化 + 允许自启动 + 允许完全后台行为,三样都开后监控才不会停。</string>
+    <string name="keepalive_ok">已忽略电池优化,保活策略全开</string>
+    <string name="keepalive_bad">未忽略电池优化,点此申请白名单</string>
+    <string name="keepalive_action">去申请</string>
+    <string name="github_title">GitHub</string>
+    <string name="github_desc">github.com/wangliaoqiongchen/daobufei</string>
+    <string name="github_url">https://github.com/wangliaoqiongchen/daobufei</string>
+    <string name="action_failed">操作失败</string>
 
     <!-- ==================== 诊断页 ==================== -->
     <string name="diag_load_failed">页面加载失败</string>

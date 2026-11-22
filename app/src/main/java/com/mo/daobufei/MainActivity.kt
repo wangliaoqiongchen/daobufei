@@ -8,6 +8,19 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -16,7 +29,9 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentContainerView
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.kyant.backdrop.backdrops.LayerBackdrop
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 
 class MainActivity : AppCompatActivity() {
 
@@ -26,7 +41,9 @@ class MainActivity : AppCompatActivity() {
             if (granted) startMonitorService()
         }
 
+    private val selectedTab = mutableIntStateOf(0)
     private var activeFragment: Fragment? = null
+    private lateinit var container: FragmentContainerView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,17 +51,26 @@ class MainActivity : AppCompatActivity() {
         // Android 15+ 强制 edge-to-edge,内容会延伸到状态栏/导航栏下面,
         // 必须手动把系统栏高度折算成容器内边距,否则顶部内容被状态栏压住
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        setContentView(R.layout.activity_main)
-
-        val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
-        val container = findViewById<FragmentContainerView>(R.id.fragmentContainer)
 
         // 状态栏图标颜色跟随深浅色主题(浅色模式用深色图标)
         WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars =
             (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) !=
                 Configuration.UI_MODE_NIGHT_YES
 
-        // 系统栏/键盘高度折算成容器内边距,内容不被状态栏压住
+        container = FragmentContainerView(this).apply { id = R.id.fragmentContainer }
+
+        val composeView = ComposeView(this).apply {
+            setContent {
+                AppRoot(
+                    container = container,
+                    selected = selectedTab.intValue,
+                    onSelected = { index -> onTabSelected(index) }
+                )
+            }
+        }
+        setContentView(composeView)
+
+        // 系统栏/键盘高度折算成容器内边距:顶部不被状态栏压住,键盘弹出时避让
         ViewCompat.setOnApplyWindowInsetsListener(container) { view, insets ->
             val bars = insets.getInsets(
                 WindowInsetsCompat.Type.systemBars() or
@@ -54,22 +80,13 @@ class MainActivity : AppCompatActivity() {
             view.updatePadding(top = bars.top, bottom = ime.bottom)
             insets
         }
-        ViewCompat.setOnApplyWindowInsetsListener(bottomNav) { view, insets ->
-            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.updatePadding(bottom = bars.bottom)
-            insets
-        }
-
-        bottomNav.setOnItemSelectedListener { item ->
-            switchTo(item.itemId)
-            true
-        }
 
         if (savedInstanceState == null) {
             switchTo(R.id.nav_vpn)
         } else {
             // 进程被杀后恢复:FragmentManager 已还原各 fragment,找出当前显示的那个
             activeFragment = supportFragmentManager.fragments.firstOrNull { it.isVisible }
+            selectedTab.intValue = savedInstanceState.getInt(KEY_TAB, 0)
         }
 
         if (ActivityCompat.checkSelfPermission(
@@ -82,6 +99,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(KEY_TAB, selectedTab.intValue)
+    }
+
     override fun onResume() {
         super.onResume()
         // 用户从系统设置打开通知权限后回来,这里补上服务启动,形成权限闭环
@@ -91,6 +113,18 @@ class MainActivity : AppCompatActivity() {
         ) {
             startMonitorService()
         }
+    }
+
+    // 底栏点击 → 切换 fragment,选中态写回 Compose
+    private fun onTabSelected(index: Int) {
+        selectedTab.intValue = index
+        val itemId = when (index) {
+            0 -> R.id.nav_vpn
+            1 -> R.id.nav_medication
+            2 -> R.id.nav_reminder
+            else -> R.id.nav_more
+        }
+        switchTo(itemId)
     }
 
     // tab 切换用 show/hide 缓存的 fragment,不再每次 replace 重建:
@@ -122,5 +156,37 @@ class MainActivity : AppCompatActivity() {
     private fun startMonitorService() {
         val intent = Intent(this, VpnMonitorService::class.java)
         ContextCompat.startForegroundService(this, intent)
+    }
+
+    companion object {
+        private const val KEY_TAB = "tab"
+    }
+}
+
+// 全屏根:页面内容(容器)作为 backdrop 源被记录,玻璃底栏悬浮其上做折射
+@Composable
+private fun AppRoot(
+    container: FragmentContainerView,
+    selected: Int,
+    onSelected: (Int) -> Unit
+) {
+    val backdrop: LayerBackdrop = rememberLayerBackdrop()
+
+    Box(Modifier.fillMaxSize()) {
+        AndroidView(
+            factory = { container },
+            modifier = Modifier
+                .fillMaxSize()
+                .layerBackdrop(backdrop)
+        )
+        GlassBottomBar(
+            selected = selected,
+            onSelected = onSelected,
+            backdrop = backdrop,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .windowInsetsPadding(WindowInsets.navigationBars)
+                .padding(horizontal = 12.dp, vertical = 12.dp)
+        )
     }
 }

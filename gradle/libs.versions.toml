@@ -8,6 +8,10 @@ appcompat = "1.8.0"
 material = "1.14.0"
 activityKtx = "1.13.0"
 constraintlayout = "2.2.2"
+backdrop = "2.0.1"
+kyantShapes = "1.2.1"
+jbCompose = "1.12.0"
+composeCompiler = "2.2.21"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -18,7 +22,11 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activityKtx" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+jb-compose-ui = { group = "org.jetbrains.compose.ui", name = "ui-android", version.ref = "jbCompose" }
+jb-compose-foundation = { group = "org.jetbrains.compose.foundation", name = "foundation-android", version.ref = "jbCompose" }
+backdrop = { group = "io.github.kyant0", name = "backdrop-android", version.ref = "backdrop" }
+kyant-shapes = { group = "io.github.kyant0", name = "shapes-android", version.ref = "kyantShapes" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "composeCompiler" }

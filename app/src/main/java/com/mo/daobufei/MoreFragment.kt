@@ -1,5 +1,6 @@
 package com.mo.daobufei
 
+import android.content.Intent
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -10,7 +11,9 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 
 class MoreFragment : Fragment() {
@@ -22,7 +25,9 @@ class MoreFragment : Fragment() {
 
         val scrollView = ScrollView(context).apply {
             isVerticalScrollBarEnabled = false
-            setPadding(context.dp(20), context.dp(12), context.dp(20), context.dp(20))
+            // 内容穿透到底栏后面,玻璃底栏才有东西可折射;底部留出可达空间
+            clipToPadding = false
+            setPadding(context.dp(20), context.dp(12), context.dp(20), context.dp(100))
         }
         val root = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
@@ -162,6 +167,9 @@ class MoreFragment : Fragment() {
         permissionCard.addView(permissionContent)
         root.addView(permissionCard)
 
+        // ---------- 后台保活 ----------
+        root.addView(buildKeepAliveCard(context))
+
         // ---------- 作者与联系方式 ----------
         root.addView(
             sectionCard(
@@ -171,8 +179,145 @@ class MoreFragment : Fragment() {
             )
         )
 
+        // ---------- GitHub ----------
+        root.addView(buildGitHubCard(context))
+
         scrollView.addView(root)
         return scrollView
+    }
+
+    // 后台保活卡:检查电池优化白名单,没加白就一键申请
+    // (ColorOS 的"后台无限制"和系统的电池优化白名单是两回事,后者才是硬开关)
+    private fun buildKeepAliveCard(context: android.content.Context): MaterialCardView {
+        val pm = context.getSystemService(android.os.PowerManager::class.java)
+        val isIgnoring = pm?.isIgnoringBatteryOptimizations(context.packageName) == true
+
+        val card = MaterialCardView(context).apply {
+            radius = context.dp(20).toFloat()
+            cardElevation = 0f
+            setCardBackgroundColor(context.color(R.color.card_bg))
+            strokeColor = context.color(R.color.divider)
+            strokeWidth = context.dp(1)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { setMargins(0, 0, 0, context.dp(14)) }
+        }
+        val col = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(context.dp(16), context.dp(16), context.dp(16), context.dp(16))
+        }
+        col.addView(cardTitle(context, context.getString(R.string.keepalive_title)))
+        col.addView(TextView(context).apply {
+            text = context.getString(R.string.keepalive_desc)
+            textSize = 12f
+            setTextColor(context.color(R.color.text_secondary))
+            setPadding(0, 0, 0, context.dp(10))
+        })
+
+        val statusText = TextView(context).apply {
+            text = if (isIgnoring) {
+                context.getString(R.string.keepalive_ok)
+            } else {
+                context.getString(R.string.keepalive_bad)
+            }
+            textSize = 13f
+            setTypeface(typeface, Typeface.BOLD)
+            setTextColor(
+                context.color(if (isIgnoring) R.color.status_good else R.color.status_bad)
+            )
+            setPadding(0, 0, 0, context.dp(12))
+        }
+        col.addView(statusText)
+
+        if (!isIgnoring) {
+            col.addView(MaterialButton(context).apply {
+                text = context.getString(R.string.keepalive_action)
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                setOnClickListener {
+                    try {
+                        context.startActivity(
+                            Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+                                .setData(android.net.Uri.parse("package:${context.packageName}"))
+                        )
+                    } catch (e: Exception) {
+                        Toast.makeText(
+                            context, context.getString(R.string.action_failed), Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            })
+        }
+        card.addView(col)
+        return card
+    }
+
+    // GitHub 卡:点击打开开源仓库
+    private fun buildGitHubCard(context: android.content.Context): MaterialCardView {
+        val card = MaterialCardView(context).apply {
+            radius = context.dp(20).toFloat()
+            cardElevation = 0f
+            setCardBackgroundColor(context.color(R.color.card_bg))
+            strokeColor = context.color(R.color.divider)
+            strokeWidth = context.dp(1)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            setOnClickListener {
+                try {
+                    context.startActivity(
+                        Intent(Intent.ACTION_VIEW, android.net.Uri.parse(context.getString(R.string.github_url)))
+                    )
+                } catch (e: Exception) {
+                    // 没有浏览器就忽略
+                }
+            }
+        }
+        val row = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(context.dp(16), context.dp(14), context.dp(16), context.dp(14))
+        }
+        val iconBox = FrameLayout(context).apply {
+            layoutParams = LinearLayout.LayoutParams(context.dp(40), context.dp(40))
+            background = context.roundDrawable(context.color(R.color.accent_container), 12f)
+        }
+        val icon = ImageView(context).apply {
+            layoutParams = FrameLayout.LayoutParams(context.dp(20), context.dp(20), android.view.Gravity.CENTER)
+            setImageResource(R.drawable.ic_globe)
+            imageTintList = android.content.res.ColorStateList.valueOf(context.color(R.color.accent))
+        }
+        iconBox.addView(icon)
+
+        val textCol = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f
+            ).apply { setMargins(context.dp(12), 0, 0, 0) }
+        }
+        val titleText = TextView(context).apply {
+            text = context.getString(R.string.github_title)
+            textSize = 15f
+            setTypeface(typeface, Typeface.BOLD)
+            setTextColor(context.color(R.color.text_primary))
+        }
+        val descText = TextView(context).apply {
+            text = context.getString(R.string.github_desc)
+            textSize = 12f
+            setTextColor(context.color(R.color.text_secondary))
+            setPadding(0, context.dp(2), 0, 0)
+        }
+        textCol.addView(titleText)
+        textCol.addView(descText)
+
+        row.addView(iconBox)
+        row.addView(textCol)
+        card.addView(row)
+        return card
     }
 
     // 卡片内的小标题
