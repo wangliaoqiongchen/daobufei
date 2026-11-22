@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item name="fragmentContainer" type="id" />
+    <item name="glassBarView" type="id" />
     <item name="nav_vpn" type="id" />
     <item name="nav_medication" type="id" />
     <item name="nav_reminder" type="id" />

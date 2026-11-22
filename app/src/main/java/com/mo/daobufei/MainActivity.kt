@@ -8,19 +8,9 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -29,9 +19,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentContainerView
-import com.kyant.backdrop.backdrops.LayerBackdrop
-import com.kyant.backdrop.backdrops.layerBackdrop
-import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import com.kyant.backdrop.backdrops.rememberCanvasBackdrop
 
 class MainActivity : AppCompatActivity() {
 
@@ -44,12 +32,12 @@ class MainActivity : AppCompatActivity() {
     private val selectedTab = mutableIntStateOf(0)
     private var activeFragment: Fragment? = null
     private lateinit var container: FragmentContainerView
+    private lateinit var glassBarView: ComposeView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Android 15+ 强制 edge-to-edge,内容会延伸到状态栏/导航栏下面,
-        // 必须手动把系统栏高度折算成容器内边距,否则顶部内容被状态栏压住
+        // Android 15+ 强制 edge-to-edge,内容会延伸到状态栏/导航栏下面
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         // 状态栏图标颜色跟随深浅色主题(浅色模式用深色图标)
@@ -57,18 +45,9 @@ class MainActivity : AppCompatActivity() {
             (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) !=
                 Configuration.UI_MODE_NIGHT_YES
 
-        container = FragmentContainerView(this).apply { id = R.id.fragmentContainer }
-
-        val composeView = ComposeView(this).apply {
-            setContent {
-                AppRoot(
-                    container = container,
-                    selected = selectedTab.intValue,
-                    onSelected = { index -> onTabSelected(index) }
-                )
-            }
-        }
-        setContentView(composeView)
+        setContentView(R.layout.activity_main)
+        container = findViewById(R.id.fragmentContainer)
+        glassBarView = findViewById(R.id.glassBarView)
 
         // 系统栏/键盘高度折算成容器内边距:顶部不被状态栏压住,键盘弹出时避让
         ViewCompat.setOnApplyWindowInsetsListener(container) { view, insets ->
@@ -79,6 +58,39 @@ class MainActivity : AppCompatActivity() {
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             view.updatePadding(top = bars.top, bottom = ime.bottom)
             insets
+        }
+        // 玻璃底栏抬到手势条上方
+        ViewCompat.setOnApplyWindowInsetsListener(glassBarView) { view, insets ->
+            val nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            view.updatePadding(bottom = nav.bottom)
+            insets
+        }
+
+        // 玻璃底栏:CanvasBackdrop 把容器内容按屏幕位置画进玻璃做折射;
+        // 页面滚动时通过 OnScrollChangedListener 触发重画,保持折射实时
+        glassBarView.setContent {
+            val backdrop = rememberCanvasBackdrop {
+                val containerLoc = IntArray(2)
+                val barLoc = IntArray(2)
+                container.getLocationOnScreen(containerLoc)
+                glassBarView.getLocationOnScreen(barLoc)
+                val canvas = drawContext.canvas.nativeCanvas
+                canvas.save()
+                canvas.translate(
+                    (containerLoc[0] - barLoc[0]).toFloat(),
+                    (containerLoc[1] - barLoc[1]).toFloat()
+                )
+                container.draw(canvas)
+                canvas.restore()
+            }
+            GlassBottomBar(
+                selected = selectedTab.intValue,
+                onSelected = { index -> onTabSelected(index) },
+                backdrop = backdrop
+            )
+        }
+        container.viewTreeObserver.addOnScrollChangedListener {
+            glassBarView.invalidate()
         }
 
         if (savedInstanceState == null) {
@@ -160,33 +172,5 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val KEY_TAB = "tab"
-    }
-}
-
-// 全屏根:页面内容(容器)作为 backdrop 源被记录,玻璃底栏悬浮其上做折射
-@Composable
-private fun AppRoot(
-    container: FragmentContainerView,
-    selected: Int,
-    onSelected: (Int) -> Unit
-) {
-    val backdrop: LayerBackdrop = rememberLayerBackdrop()
-
-    Box(Modifier.fillMaxSize()) {
-        AndroidView(
-            factory = { container },
-            modifier = Modifier
-                .fillMaxSize()
-                .layerBackdrop(backdrop)
-        )
-        GlassBottomBar(
-            selected = selected,
-            onSelected = onSelected,
-            backdrop = backdrop,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .windowInsetsPadding(WindowInsets.navigationBars)
-                .padding(horizontal = 12.dp, vertical = 12.dp)
-        )
     }
 }
