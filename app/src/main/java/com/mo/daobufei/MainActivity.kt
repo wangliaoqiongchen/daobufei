@@ -89,9 +89,24 @@ class MainActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             switchTo(R.id.nav_vpn)
         } else {
-            // 进程被杀后恢复:FragmentManager 已还原各 fragment,找出当前显示的那个
-            activeFragment = supportFragmentManager.fragments.firstOrNull { it.isVisible }
+            // 进程被杀/配置变更(切深色等)后恢复:
+            // show/hide 的隐藏状态不跨重建,所有 fragment 会全部恢复可见 → 叠影,
+            // 按 KEY_TAB 只显示目标,其余全部隐藏
             selectedTab.intValue = savedInstanceState.getInt(KEY_TAB, 0)
+            val targetTag = when (selectedTab.intValue) {
+                0 -> "vpn"
+                1 -> "medication"
+                2 -> "reminder"
+                else -> "more"
+            }
+            val fm = supportFragmentManager
+            val tx = fm.beginTransaction()
+            activeFragment = fm.fragments.firstOrNull { it.tag == targetTag }
+            fm.fragments.forEach {
+                if (it.isAdded && it !== activeFragment) tx.hide(it)
+            }
+            activeFragment?.let { tx.show(it) }
+            tx.commit()
         }
 
         if (ActivityCompat.checkSelfPermission(
