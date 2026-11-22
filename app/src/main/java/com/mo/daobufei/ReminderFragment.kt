@@ -1,4 +1,4 @@
-package com.mo.daobufei
+﻿package com.mo.daobufei
 
 import android.graphics.Typeface
 import android.os.Bundle
@@ -18,12 +18,12 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import java.util.Locale
 
-// 自定义提醒:自选大标题/小标题/时间,到点弹出系统通知,每日重复;支持修改和删除
+// 鑷畾涔夋彁閱?鑷€夊ぇ鏍囬/灏忔爣棰?鏃堕棿,鍒扮偣寮瑰嚭绯荤粺閫氱煡,姣忔棩閲嶅;鏀寔淇敼鍜屽垹闄?
 class ReminderFragment : Fragment() {
 
     private var selectedHour = 8
     private var selectedMinute = 0
-    private var editingId: Long? = null    // 非空 = 正在修改这条提醒
+    private var editingId: Long? = null    // 闈炵┖ = 姝ｅ湪淇敼杩欐潯鎻愰啋
 
     private lateinit var titleInput: TextInputEditText
     private lateinit var subtitleInput: TextInputEditText
@@ -39,9 +39,9 @@ class ReminderFragment : Fragment() {
 
         val scrollView = ScrollView(context).apply {
             isVerticalScrollBarEnabled = false
-            // 内容穿透到液态玻璃底栏后面;底部留出可达空间
+            // 鍐呭绌块€忓埌娑叉€佺幓鐠冨簳鏍忓悗闈?搴曢儴鐣欏嚭鍙揪绌洪棿
             clipToPadding = false
-            setPadding(context.dp(20), context.dp(12), context.dp(20), context.dp(100))
+            setPadding(context.dp(20), context.dp(12), context.dp(20), context.dp(120))
             hideKeyboardOnTouchOutside()
         }
         val root = LinearLayout(context).apply {
@@ -127,7 +127,7 @@ class ReminderFragment : Fragment() {
             setPadding(context.dp(16), context.dp(16), context.dp(16), context.dp(16))
         }
 
-        // 编辑状态行:修改已有提醒时显示
+        // 缂栬緫鐘舵€佽:淇敼宸叉湁鎻愰啋鏃舵樉绀?
         editStateRow = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.CENTER_VERTICAL
@@ -184,7 +184,7 @@ class ReminderFragment : Fragment() {
         tilSubtitle.addView(subtitleInput)
         col.addView(tilSubtitle)
 
-        // 时间选择行
+        // 鏃堕棿閫夋嫨琛?
         val timeRow = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.CENTER_VERTICAL
@@ -275,7 +275,7 @@ class ReminderFragment : Fragment() {
             hour = selectedHour,
             minute = selectedMinute
         )
-        // 修改:先取消旧闹钟再重排(同一 id,FLAG_UPDATE_CURRENT 也会覆盖,显式取消更稳)
+        // 淇敼:鍏堝彇娑堟棫闂归挓鍐嶉噸鎺?鍚屼竴 id,FLAG_UPDATE_CURRENT 涔熶細瑕嗙洊,鏄惧紡鍙栨秷鏇寸ǔ)
         if (editingId != null) {
             ReminderScheduler.cancel(context, id)
             ReminderStore.remove(context, id)
@@ -293,7 +293,7 @@ class ReminderFragment : Fragment() {
         refreshList()
     }
 
-    // 点列表条目:载入表单进入修改模式
+    // 鐐瑰垪琛ㄦ潯鐩?杞藉叆琛ㄥ崟杩涘叆淇敼妯″紡
     private fun enterEditMode(reminder: Reminder) {
         editingId = reminder.id
         titleInput.setText(reminder.title)
@@ -344,7 +344,7 @@ class ReminderFragment : Fragment() {
             orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.CENTER_VERTICAL
             setPadding(0, context.dp(10), 0, context.dp(10))
-            // 点击条目载入修改;删除按钮单独处理
+            // 鐐瑰嚮鏉＄洰杞藉叆淇敼;鍒犻櫎鎸夐挳鍗曠嫭澶勭悊
             setOnClickListener {
                 enterEditMode(r)
                 Toast.makeText(context, context.getString(R.string.reminder_loaded), Toast.LENGTH_SHORT).show()

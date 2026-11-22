@@ -1,4 +1,4 @@
-package com.mo.daobufei
+﻿package com.mo.daobufei
 
 import android.graphics.Typeface
 import android.os.Bundle
@@ -20,8 +20,8 @@ import com.google.android.material.textfield.TextInputLayout
 import java.time.LocalDate
 import java.time.YearMonth
 
-// 用药提醒:添加药品(每天多个服药时间) → 到点通知提醒(带"已服"按钮) →
-// 今日用药清单确认 → 月视图日历按真实服药记录渲染三色
+// 鐢ㄨ嵂鎻愰啋:娣诲姞鑽搧(姣忓ぉ澶氫釜鏈嶈嵂鏃堕棿) 鈫?鍒扮偣閫氱煡鎻愰啋(甯?宸叉湇"鎸夐挳) 鈫?
+// 浠婃棩鐢ㄨ嵂娓呭崟纭 鈫?鏈堣鍥炬棩鍘嗘寜鐪熷疄鏈嶈嵂璁板綍娓叉煋涓夎壊
 class MedicationFragment : Fragment() {
 
     private lateinit var nameInput: TextInputEditText
@@ -40,25 +40,25 @@ class MedicationFragment : Fragment() {
 
         val scrollView = ScrollView(context).apply {
             isVerticalScrollBarEnabled = false
-            // 内容穿透到液态玻璃底栏后面;底部留出可达空间
+            // 鍐呭绌块€忓埌娑叉€佺幓鐠冨簳鏍忓悗闈?搴曢儴鐣欏嚭鍙揪绌洪棿
             clipToPadding = false
-            setPadding(context.dp(20), context.dp(12), context.dp(20), context.dp(100))
+            setPadding(context.dp(20), context.dp(12), context.dp(20), context.dp(120))
             hideKeyboardOnTouchOutside()
         }
         val root = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
         }
 
-        // ---------- 头部 ----------
+        // ---------- 澶撮儴 ----------
         root.addView(buildHeaderCard(context))
 
-        // ---------- 今日用药 ----------
+        // ---------- 浠婃棩鐢ㄨ嵂 ----------
         root.addView(buildTodayCard(context))
 
-        // ---------- 药品管理 ----------
+        // ---------- 鑽搧绠＄悊 ----------
         root.addView(buildManageCard(context))
 
-        // ---------- 服药日历 ----------
+        // ---------- 鏈嶈嵂鏃ュ巻 ----------
         root.addView(buildCalendarCard(context))
 
         scrollView.addView(root)
@@ -81,7 +81,7 @@ class MedicationFragment : Fragment() {
         refreshCalendar()
     }
 
-    // ==================== 头部 ====================
+    // ==================== 澶撮儴 ====================
 
     private fun buildHeaderCard(context: android.content.Context): MaterialCardView {
         val card = MaterialCardView(context).apply {
@@ -127,7 +127,7 @@ class MedicationFragment : Fragment() {
         return card
     }
 
-    // ==================== 今日用药 ====================
+    // ==================== 浠婃棩鐢ㄨ嵂 ====================
 
     private fun buildTodayCard(context: android.content.Context): MaterialCardView {
         val card = MaterialCardView(context).apply {
@@ -170,7 +170,7 @@ class MedicationFragment : Fragment() {
             todayContainer.addView(hintText(context, context.getString(R.string.med_today_empty)))
             return
         }
-        // 汇总今天所有服药:按时间排序
+        // 姹囨€讳粖澶╂墍鏈夋湇鑽?鎸夋椂闂存帓搴?
         val doses = meds.flatMap { med ->
             med.times.map { time ->
                 Triple(time, med, MedicationStore.doseState(context, today, time, med.id))
@@ -219,7 +219,7 @@ class MedicationFragment : Fragment() {
             })
         }
 
-        // 状态胶囊
+        // 鐘舵€佽兌鍥?
         val (statusText, statusColor) = when (state) {
             MedicationStore.STATE_TAKEN -> context.getString(R.string.status_taken) to context.color(R.color.status_good)
             MedicationStore.STATE_MISSED -> context.getString(R.string.status_missed) to context.color(R.color.status_bad)
@@ -238,7 +238,7 @@ class MedicationFragment : Fragment() {
         row.addView(textCol)
         row.addView(statusPill)
 
-        // 未服的给一个操作按钮(待服="已服",超时="补服")
+        // 鏈湇鐨勭粰涓€涓搷浣滄寜閽?寰呮湇="宸叉湇",瓒呮椂="琛ユ湇")
         if (state != MedicationStore.STATE_TAKEN) {
             val actionButton = MaterialButton(context).apply {
                 text = if (state == MedicationStore.STATE_MISSED) {
@@ -264,7 +264,7 @@ class MedicationFragment : Fragment() {
         return row
     }
 
-    // ==================== 药品管理 ====================
+    // ==================== 鑽搧绠＄悊 ====================
 
     private fun buildManageCard(context: android.content.Context): MaterialCardView {
         val card = MaterialCardView(context).apply {
@@ -312,7 +312,7 @@ class MedicationFragment : Fragment() {
         tilNote.addView(noteInput)
         col.addView(tilNote)
 
-        // 服药时间行
+        // 鏈嶈嵂鏃堕棿琛?
         val timeRow = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.CENTER_VERTICAL
@@ -420,7 +420,7 @@ class MedicationFragment : Fragment() {
             note = noteInput.text?.toString()?.trim().orEmpty(),
             times = draftTimes.toList()
         )
-        MedicationStore.add(context, med)   // 内部会把每个时间都挂上每日闹钟
+        MedicationStore.add(context, med)   // 鍐呴儴浼氭妸姣忎釜鏃堕棿閮芥寕涓婃瘡鏃ラ椆閽?
         Toast.makeText(
             context,
             context.getString(R.string.med_added, med.name, med.times.joinToString("/")),
@@ -497,9 +497,9 @@ class MedicationFragment : Fragment() {
         return row
     }
 
-    // ==================== 服药日历(月视图,真实数据) ====================
-    // 一格 = 一天,竖条 = 当天计划的每次服药(几顿就几条):
-    // 绿 = 已服,红 = 超时未服,灰 = 未到时间
+    // ==================== 鏈嶈嵂鏃ュ巻(鏈堣鍥?鐪熷疄鏁版嵁) ====================
+    // 涓€鏍?= 涓€澶?绔栨潯 = 褰撳ぉ璁″垝鐨勬瘡娆℃湇鑽?鍑犻】灏卞嚑鏉?:
+    // 缁?= 宸叉湇,绾?= 瓒呮椂鏈湇,鐏?= 鏈埌鏃堕棿
     private fun buildCalendarCard(context: android.content.Context): MaterialCardView {
         val card = MaterialCardView(context).apply {
             radius = context.dp(20).toFloat()
@@ -533,7 +533,7 @@ class MedicationFragment : Fragment() {
                 context.getString(R.string.med_calendar_caption)
             )
         )
-        // 图例紧跟说明行
+        // 鍥句緥绱ц窡璇存槑琛?
         column.addView(buildLegendRow(context))
 
         val today = LocalDate.now()
@@ -551,7 +551,7 @@ class MedicationFragment : Fragment() {
             orientation = LinearLayout.HORIZONTAL
             setPadding(0, 0, 0, context.dp(2))
         }
-        "一二三四五六日".forEach { ch ->
+        "涓€浜屼笁鍥涗簲鍏棩".forEach { ch ->
             weekHeader.addView(TextView(context).apply {
                 text = ch.toString()
                 textSize = 11f
@@ -618,7 +618,7 @@ class MedicationFragment : Fragment() {
         return row
     }
 
-    // 一天的格子:圆角容器 + 每个计划服药一条竖条
+    // 涓€澶╃殑鏍煎瓙:鍦嗚瀹瑰櫒 + 姣忎釜璁″垝鏈嶈嵂涓€鏉＄珫鏉?
     private fun buildDayCell(
         context: android.content.Context, day: Int, today: LocalDate, meds: List<Medication>
     ): View {
@@ -642,7 +642,7 @@ class MedicationFragment : Fragment() {
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
         }
-        // 当天所有计划的服药,按时间排序,一次一条
+        // 褰撳ぉ鎵€鏈夎鍒掔殑鏈嶈嵂,鎸夋椂闂存帓搴?涓€娆′竴鏉?
         val doses = meds.flatMap { med -> med.times.map { time -> time to med } }
             .sortedBy { it.first }
         doses.forEach { (time, med) ->
@@ -662,7 +662,7 @@ class MedicationFragment : Fragment() {
         return container
     }
 
-    // ==================== 通用小件 ====================
+    // ==================== 閫氱敤灏忎欢 ====================
 
     private fun cardTitle(context: android.content.Context, title: String, caption: String?): View {
         return LinearLayout(context).apply {

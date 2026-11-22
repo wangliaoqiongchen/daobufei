@@ -111,8 +111,8 @@ fun GlassBottomBar(
         if (isLight) Color(0xFFFAFAFA).copy(alpha = 0.4f)
         else Color(0xFF121212).copy(alpha = 0.4f)
     val contentColor =
-        if (isLight) Color(0xFF171C22)
-        else Color(0xFFE9ECF0)
+        if (isLight) Color(0xFF5D6673)
+        else Color(0xFF98A2B0)
     val accent = colorResource(R.color.accent)
     val backdrop = remember { ViewContentBackdrop(contentView) }
     val tabsBackdrop = rememberLayerBackdrop()
@@ -142,9 +142,9 @@ fun GlassBottomBar(
                     shape = { Capsule() },
                     effects = {
                         vibrancy()
-                        blur(8f.dp.toPx())
+                        blur(16f.dp.toPx())
                     },
-                    onDrawSurface = { drawRect(containerColor) }
+                    onDrawSurface = { drawRect(containerColor.copy(alpha = 0.5f)) }
                 )
                 .height(64f.dp)
                 .fillMaxWidth()
@@ -245,21 +245,21 @@ fun GlassBottomBar(
                         }
                     )
                 }
-                .drawBackdrop(
-                    backdrop = rememberCombinedBackdrop(backdrop, tabsBackdrop),
-                    shape = { Capsule() },
-                    effects = {
-                        lens(10f.dp.toPx(), 14f.dp.toPx(), chromaticAberration = true)
-                    },
-                    highlight = { Highlight.Default },
-                    shadow = { Shadow(alpha = 0.3f) },
-                    onDrawSurface = {
-                        drawRect(
-                            if (isLight) Color.Black.copy(alpha = 0.08f)
-                            else Color.White.copy(alpha = 0.08f)
-                        )
-                    }
-                )
+                            .drawBackdrop(
+                                backdrop = backdrop,
+                                shape = { Capsule() },
+                                effects = {
+                                    lens(10f.dp.toPx(), 14f.dp.toPx())
+                                },
+                                highlight = { Highlight.Default },
+                                shadow = { Shadow(alpha = 0.3f) },
+                                onDrawSurface = {
+                                    drawRect(
+                                        if (isLight) Color.Black.copy(alpha = 0.12f)
+                                        else Color.White.copy(alpha = 0.12f)
+                                    )
+                                }
+                            )
                 .height(56f.dp)
                 .fillMaxWidth(1f / bottomTabs.size)
         )

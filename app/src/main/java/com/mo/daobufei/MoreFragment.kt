@@ -1,4 +1,4 @@
-package com.mo.daobufei
+﻿package com.mo.daobufei
 
 import android.content.Intent
 import android.graphics.Typeface
@@ -25,15 +25,15 @@ class MoreFragment : Fragment() {
 
         val scrollView = ScrollView(context).apply {
             isVerticalScrollBarEnabled = false
-            // 内容穿透到底栏后面,玻璃底栏才有东西可折射;底部留出可达空间
+            // 鍐呭绌块€忓埌搴曟爮鍚庨潰,鐜荤拑搴曟爮鎵嶆湁涓滆タ鍙姌灏?搴曢儴鐣欏嚭鍙揪绌洪棿
             clipToPadding = false
-            setPadding(context.dp(20), context.dp(12), context.dp(20), context.dp(100))
+            setPadding(context.dp(20), context.dp(12), context.dp(20), context.dp(120))
         }
         val root = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
         }
 
-        // ---------- App 信息头 ----------
+        // ---------- App 淇℃伅澶?----------
         val headerRow = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.CENTER_VERTICAL
@@ -73,7 +73,7 @@ class MoreFragment : Fragment() {
         headerRow.addView(appInfoCol)
         root.addView(headerRow)
 
-        // ---------- 功能一览 ----------
+        // ---------- 鍔熻兘涓€瑙?----------
         val featureCard = MaterialCardView(context).apply {
             radius = context.dp(20).toFloat()
             cardElevation = 0f
@@ -121,7 +121,7 @@ class MoreFragment : Fragment() {
         featureCard.addView(featureCol)
         root.addView(featureCard)
 
-        // ---------- 权限说明 ----------
+        // ---------- 鏉冮檺璇存槑 ----------
         val permissionCard = MaterialCardView(context).apply {
             radius = context.dp(20).toFloat()
             cardElevation = 0f
@@ -150,7 +150,7 @@ class MoreFragment : Fragment() {
                 setPadding(0, context.dp(8), 0, context.dp(8))
             }
             val itemTitle = TextView(context).apply {
-                text = "• $title"
+                text = "鈥?$title"
                 textSize = 15f
                 setTextColor(context.color(R.color.text_primary))
             }
@@ -167,13 +167,13 @@ class MoreFragment : Fragment() {
         permissionCard.addView(permissionContent)
         root.addView(permissionCard)
 
-        // ---------- 深色模式 ----------
+        // ---------- 娣辫壊妯″紡 ----------
         root.addView(buildDarkModeCard(context))
 
-        // ---------- 后台保活 ----------
+        // ---------- 鍚庡彴淇濇椿 ----------
         root.addView(buildKeepAliveCard(context))
 
-        // ---------- 作者与联系方式 ----------
+        // ---------- 浣滆€呬笌鑱旂郴鏂瑰紡 ----------
         root.addView(
             sectionCard(
                 context,
@@ -189,7 +189,7 @@ class MoreFragment : Fragment() {
         return scrollView
     }
 
-    // 深色模式选择卡:跟随系统 / 浅色 / 深色,点击立即全局生效
+    // 娣辫壊妯″紡閫夋嫨鍗?璺熼殢绯荤粺 / 娴呰壊 / 娣辫壊,鐐瑰嚮绔嬪嵆鍏ㄥ眬鐢熸晥
     private fun buildDarkModeCard(context: android.content.Context): MaterialCardView {
         val card = MaterialCardView(context).apply {
             radius = context.dp(20).toFloat()
@@ -264,8 +264,8 @@ class MoreFragment : Fragment() {
         return card
     }
 
-    // 后台保活卡:检查电池优化白名单,没加白就一键申请
-    // (ColorOS 的"后台无限制"和系统的电池优化白名单是两回事,后者才是硬开关)
+    // 鍚庡彴淇濇椿鍗?妫€鏌ョ數姹犱紭鍖栫櫧鍚嶅崟,娌″姞鐧藉氨涓€閿敵璇?
+    // (ColorOS 鐨?鍚庡彴鏃犻檺鍒?鍜岀郴缁熺殑鐢垫睜浼樺寲鐧藉悕鍗曟槸涓ゅ洖浜?鍚庤€呮墠鏄‖寮€鍏?
     private fun buildKeepAliveCard(context: android.content.Context): MaterialCardView {
         val pm = context.getSystemService(android.os.PowerManager::class.java)
         val isIgnoring = pm?.isIgnoringBatteryOptimizations(context.packageName) == true
@@ -333,7 +333,7 @@ class MoreFragment : Fragment() {
         return card
     }
 
-    // GitHub 卡:点击打开开源仓库
+    // GitHub 鍗?鐐瑰嚮鎵撳紑寮€婧愪粨搴?
     private fun buildGitHubCard(context: android.content.Context): MaterialCardView {
         val card = MaterialCardView(context).apply {
             radius = context.dp(20).toFloat()
@@ -351,7 +351,7 @@ class MoreFragment : Fragment() {
                         Intent(Intent.ACTION_VIEW, android.net.Uri.parse(context.getString(R.string.github_url)))
                     )
                 } catch (e: Exception) {
-                    // 没有浏览器就忽略
+                    // 娌℃湁娴忚鍣ㄥ氨蹇界暐
                 }
             }
         }
@@ -398,7 +398,7 @@ class MoreFragment : Fragment() {
         return card
     }
 
-    // 卡片内的小标题
+    // 鍗＄墖鍐呯殑灏忔爣棰?
     private fun cardTitle(context: android.content.Context, title: String): TextView {
         return TextView(context).apply {
             text = title
@@ -409,7 +409,7 @@ class MoreFragment : Fragment() {
         }
     }
 
-    // 功能一览行:圆角图标 + 标题 + 描述
+    // 鍔熻兘涓€瑙堣:鍦嗚鍥炬爣 + 鏍囬 + 鎻忚堪
     private fun featureRow(
         context: android.content.Context, iconRes: Int, title: String, desc: String
     ): View {
@@ -455,7 +455,7 @@ class MoreFragment : Fragment() {
         return row
     }
 
-    // 生成一张标题+正文的卡片,减少重复代码
+    // 鐢熸垚涓€寮犳爣棰?姝ｆ枃鐨勫崱鐗?鍑忓皯閲嶅浠ｇ爜
     private fun sectionCard(
         context: android.content.Context, title: String, content: String
     ): MaterialCardView {
