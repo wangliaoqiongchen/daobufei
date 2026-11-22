@@ -1,4 +1,4 @@
-﻿package com.mo.daobufei
+package com.mo.daobufei
 
 import android.content.Intent
 import android.graphics.Typeface
@@ -25,9 +25,10 @@ class MoreFragment : Fragment() {
 
         val scrollView = ScrollView(context).apply {
             isVerticalScrollBarEnabled = false
-            // 鍐呭绌块€忓埌搴曟爮鍚庨潰,鐜荤拑搴曟爮鎵嶆湁涓滆タ鍙姌灏?搴曢儴鐣欏嚭鍙揪绌洪棿
+            // 内容穿透到顶部磨砂条和液态玻璃底栏后面;首项从条下开始
             clipToPadding = false
-            setPadding(context.dp(20), context.dp(12), context.dp(20), context.dp(120))
+            setPadding(context.dp(20), 0, context.dp(20), context.dp(120))
+            applyTopInset(24)
         }
         val root = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL

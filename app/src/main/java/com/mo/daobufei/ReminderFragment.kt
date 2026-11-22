@@ -41,9 +41,10 @@ class ReminderFragment : Fragment() {
 
         val scrollView = ScrollView(context).apply {
             isVerticalScrollBarEnabled = false
-            // 内容穿透到液态玻璃底栏后面;底部留出可达空间
+            // 内容穿透到顶部磨砂条和液态玻璃底栏后面;首项从条下开始
             clipToPadding = false
-            setPadding(context.dp(20), context.dp(12), context.dp(20), context.dp(120))
+            setPadding(context.dp(20), 0, context.dp(20), context.dp(120))
+            applyTopInset(24)
             hideKeyboardOnTouchOutside()
         }
         val root = LinearLayout(context).apply {
