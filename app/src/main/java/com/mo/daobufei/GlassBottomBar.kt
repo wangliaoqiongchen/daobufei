@@ -107,13 +107,15 @@ fun GlassBottomBar(
     modifier: Modifier = Modifier
 ) {
     val isLight = !isSystemInDarkTheme()
+    // 提亮玻璃底色,让胶囊在浅灰蓝页面背景上也能读出来(深色同理)
     val containerColor =
-        if (isLight) Color(0xFFFAFAFA).copy(alpha = 0.4f)
-        else Color(0xFF121212).copy(alpha = 0.4f)
+        if (isLight) Color(0xFFFAFAFA).copy(alpha = 0.65f)
+        else Color(0xFF121212).copy(alpha = 0.6f)
     val contentColor =
         if (isLight) Color(0xFF5D6673)
         else Color(0xFF98A2B0)
     val accent = colorResource(R.color.accent)
+    val accentContainer = colorResource(R.color.accent_container)
     val backdrop = remember { ViewContentBackdrop(contentView) }
     val tabsBackdrop = rememberLayerBackdrop()
     val scope = rememberCoroutineScope()
@@ -144,7 +146,8 @@ fun GlassBottomBar(
                         vibrancy()
                         blur(16f.dp.toPx())
                     },
-                    onDrawSurface = { drawRect(containerColor.copy(alpha = 0.5f)) }
+                    shadow = { Shadow(alpha = 0.15f) },
+                    onDrawSurface = { drawRect(containerColor) }
                 )
                 .height(64f.dp)
                 .fillMaxWidth()
@@ -254,10 +257,8 @@ fun GlassBottomBar(
                                 highlight = { Highlight.Default },
                                 shadow = { Shadow(alpha = 0.3f) },
                                 onDrawSurface = {
-                                    drawRect(
-                                        if (isLight) Color.Black.copy(alpha = 0.12f)
-                                        else Color.White.copy(alpha = 0.12f)
-                                    )
+                                    // 选中态用品牌绿玻璃,对齐旧版 Material 的选中指示器
+                                    drawRect(accentContainer.copy(alpha = 0.6f))
                                 }
                             )
                 .height(56f.dp)
