@@ -17,3 +17,5 @@ local.properties
 .zcode/
 .zcodeignore
 优化建议.md
+keystore.properties
+app/release.keystore

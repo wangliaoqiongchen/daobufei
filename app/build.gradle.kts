@@ -1,3 +1,11 @@
+import java.util.Properties
+
+// 正式签名:从 keystore.properties 读取(该文件与 keystore 均已 gitignore,不入公开仓库)
+val keystoreProps = Properties().apply {
+    val f = rootProject.file("keystore.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
@@ -19,11 +27,21 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file(keystoreProps.getProperty("storeFile", "release.keystore"))
+            storePassword = keystoreProps.getProperty("storePassword", "")
+            keyAlias = keystoreProps.getProperty("keyAlias", "")
+            keyPassword = keystoreProps.getProperty("keyPassword", "")
+        }
+    }
+
     buildTypes {
         release {
             optimization {
                 enable = true
             }
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
