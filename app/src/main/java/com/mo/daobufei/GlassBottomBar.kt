@@ -125,6 +125,7 @@ fun GlassBottomBar(
             (constraints.maxWidth.toFloat() - 8f.dp.toPx()) / bottomTabs.size
         }
         val pillOffset = remember { Animatable(0f) }
+        val pillScale = remember { Animatable(1f) }
 
         // 点 tab 选中 → 胶囊弹簧滑过去
         LaunchedEffect(selected) {
@@ -132,6 +133,8 @@ fun GlassBottomBar(
         }
 
         // ---------- 主行:玻璃胶囊 + 四个 tab ----------
+        // 只用 vibrancy+blur,不加 lens:lens 的折射位移会在滚动时产生重影;
+        // 折射细节留给选中胶囊的小面积透镜
         Row(
             Modifier
                 .drawBackdrop(
@@ -140,7 +143,6 @@ fun GlassBottomBar(
                     effects = {
                         vibrancy()
                         blur(8f.dp.toPx())
-                        lens(24f.dp.toPx(), 24f.dp.toPx())
                     },
                     onDrawSurface = { drawRect(containerColor) }
                 )
@@ -207,14 +209,20 @@ fun GlassBottomBar(
             }
         }
 
-        // ---------- 选中胶囊:可拖动,松手弹簧归位到最近 tab ----------
+        // ---------- 选中胶囊:可拖动,按住微放大(下压感),松手弹簧归位到最近 tab ----------
         Box(
             Modifier
                 .padding(horizontal = 4f.dp)
-                .graphicsLayer { translationX = pillOffset.value }
+                .graphicsLayer {
+                    translationX = pillOffset.value
+                    scaleX = pillScale.value
+                    scaleY = pillScale.value
+                }
                 .pointerInput(tabWidth) {
                     detectDragGestures(
-                        onDragStart = { },
+                        onDragStart = {
+                            scope.launch { pillScale.animateTo(1.12f, spring(stiffness = 500f)) }
+                        },
                         onDrag = { change, dragAmount ->
                             change.consume()
                             scope.launch { pillOffset.snapTo(pillOffset.value + dragAmount.x) }
@@ -225,13 +233,16 @@ fun GlassBottomBar(
                                 .coerceIn(0, bottomTabs.size - 1)
                             onSelected(nearest)
                             scope.launch {
+                                pillScale.animateTo(1f, spring(stiffness = 500f))
                                 pillOffset.animateTo(
                                     nearest * tabWidth,
                                     spring(dampingRatio = 0.85f, stiffness = 500f)
                                 )
                             }
                         },
-                        onDragCancel = { }
+                        onDragCancel = {
+                            scope.launch { pillScale.animateTo(1f, spring(stiffness = 500f)) }
+                        }
                     )
                 }
                 .drawBackdrop(

@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.ComposeView
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -35,6 +36,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 深色模式偏好(更多页可改):先应用再创建视图,颜色 token 自动跟随
+        when (SettingsPrefs.nightMode(this)) {
+            SettingsPrefs.NIGHT_LIGHT -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+            SettingsPrefs.NIGHT_DARK -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+            else -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        }
 
         // Android 15+ 强制 edge-to-edge,内容会延伸到状态栏/导航栏下面
         WindowCompat.setDecorFitsSystemWindows(window, false)

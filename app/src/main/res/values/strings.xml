@@ -132,6 +132,10 @@
     <string name="github_desc">github.com/wangliaoqiongchen/daobufei</string>
     <string name="github_url">https://github.com/wangliaoqiongchen/daobufei</string>
     <string name="action_failed">操作失败</string>
+    <string name="dark_mode_title">深色模式</string>
+    <string name="dark_follow">跟随系统</string>
+    <string name="dark_light">浅色</string>
+    <string name="dark_dark">深色</string>
 
     <!-- ==================== 诊断页 ==================== -->
     <string name="diag_load_failed">页面加载失败</string>

@@ -167,6 +167,9 @@ class MoreFragment : Fragment() {
         permissionCard.addView(permissionContent)
         root.addView(permissionCard)
 
+        // ---------- 深色模式 ----------
+        root.addView(buildDarkModeCard(context))
+
         // ---------- 后台保活 ----------
         root.addView(buildKeepAliveCard(context))
 
@@ -184,6 +187,81 @@ class MoreFragment : Fragment() {
 
         scrollView.addView(root)
         return scrollView
+    }
+
+    // 深色模式选择卡:跟随系统 / 浅色 / 深色,点击立即全局生效
+    private fun buildDarkModeCard(context: android.content.Context): MaterialCardView {
+        val card = MaterialCardView(context).apply {
+            radius = context.dp(20).toFloat()
+            cardElevation = 0f
+            setCardBackgroundColor(context.color(R.color.card_bg))
+            strokeColor = context.color(R.color.divider)
+            strokeWidth = context.dp(1)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { setMargins(0, 0, 0, context.dp(14)) }
+        }
+        val col = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(context.dp(16), context.dp(16), context.dp(16), context.dp(16))
+        }
+        col.addView(cardTitle(context, context.getString(R.string.dark_mode_title)))
+
+        val current = SettingsPrefs.nightMode(context)
+        val options = listOf(
+            SettingsPrefs.NIGHT_FOLLOW_SYSTEM to context.getString(R.string.dark_follow),
+            SettingsPrefs.NIGHT_LIGHT to context.getString(R.string.dark_light),
+            SettingsPrefs.NIGHT_DARK to context.getString(R.string.dark_dark)
+        )
+        val row = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+        }
+        options.forEach { (mode, label) ->
+            val isSelected = mode == current
+            row.addView(TextView(context).apply {
+                text = label
+                textSize = 13f
+                setTypeface(typeface, Typeface.BOLD)
+                setTextColor(
+                    context.color(if (isSelected) R.color.accent else R.color.text_secondary)
+                )
+                setPadding(context.dp(14), context.dp(8), context.dp(14), context.dp(8))
+                background = context.pillDrawable(
+                    context.color(if (isSelected) R.color.accent_container else R.color.card_bg_muted)
+                )
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    weight = 1f
+                    setMargins(context.dp(2), 0, context.dp(2), 0)
+                }
+                gravity = android.view.Gravity.CENTER
+                setOnClickListener {
+                    if (mode != SettingsPrefs.nightMode(context)) {
+                        SettingsPrefs.setNightMode(context, mode)
+                        when (mode) {
+                            SettingsPrefs.NIGHT_LIGHT ->
+                                androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(
+                                    androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
+                                )
+                            SettingsPrefs.NIGHT_DARK ->
+                                androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(
+                                    androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
+                                )
+                            else ->
+                                androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(
+                                    androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+                                )
+                        }
+                    }
+                }
+            })
+        }
+        col.addView(row)
+        card.addView(col)
+        return card
     }
 
     // 后台保活卡:检查电池优化白名单,没加白就一键申请
