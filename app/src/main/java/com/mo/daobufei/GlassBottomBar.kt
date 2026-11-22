@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -272,22 +274,36 @@ fun GlassBottomBar(
     }
 }
 
-// 顶部状态栏磨砂条:内容上滑穿过状态栏区域时被磨砂化,
-// 底色用垂直渐隐过渡,避免和页面内容之间出现硬边界
+// 顶部状态栏磨砂条:高度 = 状态栏 + 12dp 渐隐区;
+// 模糊只在滑动时出现(滚动停止淡出恢复),避免常驻模糊把页面糊住
 @Composable
-fun GlassStatusBar(backdrop: Backdrop, modifier: Modifier = Modifier) {
+fun GlassStatusBar(
+    backdrop: Backdrop,
+    isScrolling: Boolean,
+    modifier: Modifier = Modifier
+) {
     val isLight = !isSystemInDarkTheme()
     val tintTop =
-        if (isLight) Color(0xFFFFFFFF).copy(alpha = 0.7f)
-        else Color(0xFF000000).copy(alpha = 0.5f)
+        if (isLight) Color(0xFFFFFFFF).copy(alpha = 0.55f)
+        else Color(0xFF000000).copy(alpha = 0.45f)
+    val density = LocalDensity.current
+    // 高度直接取状态栏 inset,不再依赖 View 层传高度
+    val stripHeight = with(density) {
+        androidx.compose.foundation.layout.WindowInsets.statusBars.getTop(density).toDp() + 12f.dp
+    }
+    val blurProgress = remember { Animatable(0f) }
+    LaunchedEffect(isScrolling) {
+        blurProgress.animateTo(if (isScrolling) 1f else 0f, spring(stiffness = 300f))
+    }
     Row(
         modifier
+            .height(stripHeight)
             .drawBackdrop(
                 backdrop = backdrop,
                 shape = { RoundedCornerShape(bottomStart = 20f.dp, bottomEnd = 20f.dp) },
                 effects = {
                     vibrancy()
-                    blur(8f.dp.toPx())
+                    blur(8f.dp.toPx() * blurProgress.value)
                 },
                 onDrawSurface = {
                     drawRect(
@@ -298,6 +314,6 @@ fun GlassStatusBar(backdrop: Backdrop, modifier: Modifier = Modifier) {
                     )
                 }
             )
-            .fillMaxSize()
+            .fillMaxWidth()
     ) {}
 }

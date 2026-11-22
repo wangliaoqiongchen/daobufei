@@ -9,6 +9,7 @@ import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.ComposeView
 import androidx.appcompat.app.AppCompatDelegate
@@ -30,6 +31,8 @@ class MainActivity : AppCompatActivity() {
         }
 
     private val selectedTab = mutableIntStateOf(0)
+    private val isScrolling = mutableStateOf(false)
+    private val scrollStopHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private var activeFragment: Fragment? = null
     private lateinit var container: FragmentContainerView
     private lateinit var glassBarView: ComposeView
@@ -88,13 +91,20 @@ class MainActivity : AppCompatActivity() {
                 backdrop = sharedBackdrop
             )
         }
-        // 顶部状态栏磨砂条
+        // 顶部状态栏磨砂条:滑动时模糊,停止后淡出恢复
         topGlassView.setContent {
-            GlassStatusBar(backdrop = sharedBackdrop)
+            GlassStatusBar(
+                backdrop = sharedBackdrop,
+                isScrolling = isScrolling.value
+            )
         }
         container.viewTreeObserver.addOnScrollChangedListener {
+            // 滚动中:置为滑动状态并刷新两块玻璃;180ms 无滚动事件视为停止
+            isScrolling.value = true
             glassBarView.invalidate()
             topGlassView.invalidate()
+            scrollStopHandler.removeCallbacksAndMessages(null)
+            scrollStopHandler.postDelayed({ isScrolling.value = false }, 180)
         }
 
         if (savedInstanceState == null) {
