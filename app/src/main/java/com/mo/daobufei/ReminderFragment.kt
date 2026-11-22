@@ -1,4 +1,4 @@
-﻿package com.mo.daobufei
+package com.mo.daobufei
 
 import android.graphics.Typeface
 import android.os.Bundle
@@ -18,16 +18,18 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import java.util.Locale
 
-// 鑷畾涔夋彁閱?鑷€夊ぇ鏍囬/灏忔爣棰?鏃堕棿,鍒扮偣寮瑰嚭绯荤粺閫氱煡,姣忔棩閲嶅;鏀寔淇敼鍜屽垹闄?
+// 自定义提醒:自选大标题/小标题/时间/生效星期,到点弹出系统通知;支持修改和删除
 class ReminderFragment : Fragment() {
 
     private var selectedHour = 8
     private var selectedMinute = 0
-    private var editingId: Long? = null    // 闈炵┖ = 姝ｅ湪淇敼杩欐潯鎻愰啋
+    private var editingId: Long? = null    // 非空 = 正在修改这条提醒
+    private val draftDays = mutableSetOf(1, 2, 3, 4, 5, 6, 7)   // 生效星期(1=周一..7=周日)
 
     private lateinit var titleInput: TextInputEditText
     private lateinit var subtitleInput: TextInputEditText
     private lateinit var timeText: TextView
+    private lateinit var weekdaysRow: LinearLayout
     private lateinit var editStateRow: LinearLayout
     private lateinit var actionButton: MaterialButton
     private lateinit var listContainer: LinearLayout
@@ -39,7 +41,7 @@ class ReminderFragment : Fragment() {
 
         val scrollView = ScrollView(context).apply {
             isVerticalScrollBarEnabled = false
-            // 鍐呭绌块€忓埌娑叉€佺幓鐠冨簳鏍忓悗闈?搴曢儴鐣欏嚭鍙揪绌洪棿
+            // 内容穿透到液态玻璃底栏后面;底部留出可达空间
             clipToPadding = false
             setPadding(context.dp(20), context.dp(12), context.dp(20), context.dp(120))
             hideKeyboardOnTouchOutside()
@@ -127,7 +129,7 @@ class ReminderFragment : Fragment() {
             setPadding(context.dp(16), context.dp(16), context.dp(16), context.dp(16))
         }
 
-        // 缂栬緫鐘舵€佽:淇敼宸叉湁鎻愰啋鏃舵樉绀?
+        // 编辑状态行:修改已有提醒时显示
         editStateRow = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.CENTER_VERTICAL
@@ -184,7 +186,7 @@ class ReminderFragment : Fragment() {
         tilSubtitle.addView(subtitleInput)
         col.addView(tilSubtitle)
 
-        // 鏃堕棿閫夋嫨琛?
+        // 时间选择行
         val timeRow = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.CENTER_VERTICAL
@@ -215,6 +217,20 @@ class ReminderFragment : Fragment() {
         }
         timeRow.addView(timeText)
         col.addView(timeRow)
+
+        // 重复星期选择行
+        col.addView(TextView(context).apply {
+            text = context.getString(R.string.reminder_repeat_label)
+            textSize = 15f
+            setTextColor(context.color(R.color.text_primary))
+            setPadding(0, context.dp(4), 0, context.dp(8))
+        })
+        weekdaysRow = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(0, 0, 0, context.dp(14))
+        }
+        col.addView(weekdaysRow)
+        redrawWeekdays()
 
         actionButton = MaterialButton(context).apply {
             text = context.getString(R.string.reminder_add_button)
@@ -260,11 +276,53 @@ class ReminderFragment : Fragment() {
         return card
     }
 
+    // 重复星期的可读标签:全选="每天";否则"周一、周三"
+    private fun repeatLabel(days: List<Int>): String {
+        if (days.isEmpty() || days.size == 7) return getString(R.string.reminder_daily)
+        val chars = "一二三四五六日"
+        return "周" + days.sorted().joinToString("、") { chars[it - 1].toString() }
+    }
+
+    private fun weekdayChar(day: Int): String = "一二三四五六日"[day - 1].toString()
+
+    private fun redrawWeekdays() {
+        if (!::weekdaysRow.isInitialized) return
+        val context = requireContext()
+        weekdaysRow.removeAllViews()
+        (1..7).forEach { day ->
+            val isSelected = day in draftDays
+            weekdaysRow.addView(TextView(context).apply {
+                text = weekdayChar(day)
+                textSize = 13f
+                setTypeface(typeface, Typeface.BOLD)
+                setTextColor(
+                    context.color(if (isSelected) R.color.accent else R.color.text_secondary)
+                )
+                setPadding(context.dp(12), context.dp(8), context.dp(12), context.dp(8))
+                background = context.pillDrawable(
+                    context.color(if (isSelected) R.color.accent_container else R.color.card_bg_muted)
+                )
+                layoutParams = LinearLayout.LayoutParams(
+                    0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f
+                ).apply { setMargins(context.dp(2), 0, context.dp(2), 0) }
+                gravity = android.view.Gravity.CENTER
+                setOnClickListener {
+                    if (isSelected) draftDays.remove(day) else draftDays.add(day)
+                    redrawWeekdays()
+                }
+            })
+        }
+    }
+
     private fun saveReminder() {
         val context = requireContext()
         val title = titleInput.text?.toString()?.trim().orEmpty()
         if (title.isEmpty()) {
             Toast.makeText(context, context.getString(R.string.reminder_title_required), Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (draftDays.isEmpty()) {
+            Toast.makeText(context, context.getString(R.string.reminder_days_required), Toast.LENGTH_SHORT).show()
             return
         }
         val id = editingId ?: System.currentTimeMillis()
@@ -273,9 +331,10 @@ class ReminderFragment : Fragment() {
             title = title,
             subtitle = subtitleInput.text?.toString()?.trim().orEmpty(),
             hour = selectedHour,
-            minute = selectedMinute
+            minute = selectedMinute,
+            days = draftDays.sorted()
         )
-        // 淇敼:鍏堝彇娑堟棫闂归挓鍐嶉噸鎺?鍚屼竴 id,FLAG_UPDATE_CURRENT 涔熶細瑕嗙洊,鏄惧紡鍙栨秷鏇寸ǔ)
+        // 修改:先取消旧闹钟再重排(同一 id,FLAG_UPDATE_CURRENT 也会覆盖,显式取消更稳)
         if (editingId != null) {
             ReminderScheduler.cancel(context, id)
             ReminderStore.remove(context, id)
@@ -284,7 +343,11 @@ class ReminderFragment : Fragment() {
         ReminderScheduler.schedule(context, reminder)
         Toast.makeText(
             context,
-            context.getString(R.string.reminder_saved, TimeUtil.hhmm(reminder.hour, reminder.minute)),
+            context.getString(
+                R.string.reminder_saved,
+                repeatLabel(reminder.days),
+                TimeUtil.hhmm(reminder.hour, reminder.minute)
+            ),
             Toast.LENGTH_SHORT
         ).show()
         exitEditMode()
@@ -293,14 +356,17 @@ class ReminderFragment : Fragment() {
         refreshList()
     }
 
-    // 鐐瑰垪琛ㄦ潯鐩?杞藉叆琛ㄥ崟杩涘叆淇敼妯″紡
+    // 点列表条目:载入表单进入修改模式
     private fun enterEditMode(reminder: Reminder) {
         editingId = reminder.id
         titleInput.setText(reminder.title)
         subtitleInput.setText(reminder.subtitle)
         selectedHour = reminder.hour
         selectedMinute = reminder.minute
+        draftDays.clear()
+        draftDays.addAll(reminder.days.ifEmpty { (1..7).toList() })
         timeText.text = TimeUtil.hhmm(reminder.hour, reminder.minute)
+        redrawWeekdays()
         actionButton.text = getString(R.string.reminder_save_button)
         editStateRow.visibility = View.VISIBLE
         refreshList()
@@ -314,8 +380,13 @@ class ReminderFragment : Fragment() {
         subtitleInput.setText("")
         selectedHour = 8
         selectedMinute = 0
+        draftDays.clear()
+        draftDays.addAll(1..7)
         if (::timeText.isInitialized) {
             timeText.text = TimeUtil.hhmm(selectedHour, selectedMinute)
+        }
+        if (::weekdaysRow.isInitialized) {
+            redrawWeekdays()
         }
         refreshList()
     }
@@ -344,7 +415,7 @@ class ReminderFragment : Fragment() {
             orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.CENTER_VERTICAL
             setPadding(0, context.dp(10), 0, context.dp(10))
-            // 鐐瑰嚮鏉＄洰杞藉叆淇敼;鍒犻櫎鎸夐挳鍗曠嫭澶勭悊
+            // 点击条目载入修改;删除按钮单独处理
             setOnClickListener {
                 enterEditMode(r)
                 Toast.makeText(context, context.getString(R.string.reminder_loaded), Toast.LENGTH_SHORT).show()
@@ -384,7 +455,7 @@ class ReminderFragment : Fragment() {
             })
         }
         textCol.addView(TextView(context).apply {
-            text = context.getString(R.string.daily_at, TimeUtil.hhmm(r.hour, r.minute))
+            text = "${repeatLabel(r.days)} ${TimeUtil.hhmm(r.hour, r.minute)}"
             textSize = 11f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(context.color(R.color.accent))

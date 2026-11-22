@@ -33,6 +33,8 @@ class MainActivity : AppCompatActivity() {
     private var activeFragment: Fragment? = null
     private lateinit var container: FragmentContainerView
     private lateinit var glassBarView: ComposeView
+    private lateinit var topGlassView: ComposeView
+    private lateinit var sharedBackdrop: ViewContentBackdrop
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,6 +57,9 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         container = findViewById(R.id.fragmentContainer)
         glassBarView = findViewById(R.id.glassBarView)
+        topGlassView = findViewById(R.id.topGlassView)
+        // 底栏与顶部磨砂条共用同一个"页面内容"backdrop
+        sharedBackdrop = ViewContentBackdrop { container }
 
         // 系统栏/键盘高度折算成容器内边距:顶部不被状态栏压住,键盘弹出时避让
         ViewCompat.setOnApplyWindowInsetsListener(container) { view, insets ->
@@ -79,11 +84,17 @@ class MainActivity : AppCompatActivity() {
             GlassBottomBar(
                 selected = selectedTab.intValue,
                 onSelected = { index -> onTabSelected(index) },
-                contentView = { container }
+                contentView = { container },
+                backdrop = sharedBackdrop
             )
+        }
+        // 顶部状态栏磨砂条
+        topGlassView.setContent {
+            GlassStatusBar(backdrop = sharedBackdrop)
         }
         container.viewTreeObserver.addOnScrollChangedListener {
             glassBarView.invalidate()
+            topGlassView.invalidate()
         }
 
         if (savedInstanceState == null) {

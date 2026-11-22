@@ -90,10 +90,13 @@
     <string name="reminder_big_title_hint">大标题(必填)</string>
     <string name="reminder_small_title_hint">小标题(选填)</string>
     <string name="reminder_time_label">提醒时间</string>
+    <string name="reminder_repeat_label">重复</string>
+    <string name="reminder_days_required">至少选一个星期</string>
+    <string name="reminder_daily">每天</string>
     <string name="reminder_add_button">添加提醒</string>
     <string name="reminder_save_button">保存修改</string>
     <string name="reminder_title_required">先填写大标题</string>
-    <string name="reminder_saved">已设置,每天 %1$s 提醒</string>
+    <string name="reminder_saved">已设置,%1$s %2$s 提醒</string>
     <string name="reminder_list_title">已设置的提醒(点一下可修改)</string>
     <string name="reminder_list_empty">还没有提醒,先在上方创建一个</string>
     <string name="reminder_loaded">已载入,改完点\"保存修改\"</string>

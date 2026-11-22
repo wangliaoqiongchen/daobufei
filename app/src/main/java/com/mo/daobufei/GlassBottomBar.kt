@@ -100,6 +100,7 @@ fun GlassBottomBar(
     selected: Int,
     onSelected: (Int) -> Unit,
     contentView: () -> View,
+    backdrop: Backdrop,
     modifier: Modifier = Modifier
 ) {
     val isLight = !isSystemInDarkTheme()
@@ -115,7 +116,6 @@ fun GlassBottomBar(
         else Color(0xFF98A2B0)
     val accent = colorResource(R.color.accent)
     val accentContainer = colorResource(R.color.accent_container)
-    val backdrop = remember { ViewContentBackdrop(contentView) }
     val scope = rememberCoroutineScope()
 
     BoxWithConstraints(modifier, contentAlignment = Alignment.CenterStart) {
@@ -270,4 +270,34 @@ fun GlassBottomBar(
             }
         }
     }
+}
+
+// 顶部状态栏磨砂条:内容上滑穿过状态栏区域时被磨砂化,
+// 底色用垂直渐隐过渡,避免和页面内容之间出现硬边界
+@Composable
+fun GlassStatusBar(backdrop: Backdrop, modifier: Modifier = Modifier) {
+    val isLight = !isSystemInDarkTheme()
+    val tintTop =
+        if (isLight) Color(0xFFFFFFFF).copy(alpha = 0.7f)
+        else Color(0xFF000000).copy(alpha = 0.5f)
+    Row(
+        modifier
+            .drawBackdrop(
+                backdrop = backdrop,
+                shape = { RoundedCornerShape(bottomStart = 20f.dp, bottomEnd = 20f.dp) },
+                effects = {
+                    vibrancy()
+                    blur(8f.dp.toPx())
+                },
+                onDrawSurface = {
+                    drawRect(
+                        brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                            0f to tintTop,
+                            1f to tintTop.copy(alpha = 0f)
+                        )
+                    )
+                }
+            )
+            .fillMaxSize()
+    ) {}
 }

@@ -41,6 +41,7 @@ class ReminderReceiver : BroadcastReceiver() {
         val subtitle = intent.getStringExtra("subtitle").orEmpty()
         val hour = intent.getIntExtra("hour", 8)
         val minute = intent.getIntExtra("minute", 0)
+        val days = (intent.getIntArrayExtra("days") ?: IntArray(0)).toList()
         val notifId = (id % Int.MAX_VALUE).toInt()
 
         val openApp = PendingIntent.getActivity(
@@ -74,9 +75,9 @@ class ReminderReceiver : BroadcastReceiver() {
             dismiss
         )
 
-        // 每日重复:立即排到明天同一时间
+        // 重复规则:按提醒的星期设置重算下一次(可能在未来一周内)
         ReminderScheduler.schedule(
-            context, Reminder(id, title, subtitle, hour, minute)
+            context, Reminder(id, title, subtitle, hour, minute, days)
         )
     }
 
