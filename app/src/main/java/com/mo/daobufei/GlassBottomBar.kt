@@ -107,10 +107,14 @@ fun GlassBottomBar(
     modifier: Modifier = Modifier
 ) {
     val isLight = !isSystemInDarkTheme()
-    // 提亮玻璃底色,让胶囊在浅灰蓝页面背景上也能读出来(深色同理)
+    // 玻璃要"立得住"靠三重对比:更亮的底色 + 亮色描边 + 投影(颜色相近的背景上,
+    // 单靠半透明底色在同色系背景上不可见,数学上色差只有几个灰阶)
     val containerColor =
-        if (isLight) Color(0xFFFAFAFA).copy(alpha = 0.65f)
-        else Color(0xFF121212).copy(alpha = 0.6f)
+        if (isLight) Color(0xFFFFFFFF).copy(alpha = 0.72f)
+        else Color(0xFF000000).copy(alpha = 0.55f)
+    val rimColor =
+        if (isLight) Color(0xFFFFFFFF).copy(alpha = 0.9f)
+        else Color(0xFFFFFFFF).copy(alpha = 0.16f)
     val contentColor =
         if (isLight) Color(0xFF5D6673)
         else Color(0xFF98A2B0)
@@ -146,8 +150,18 @@ fun GlassBottomBar(
                         vibrancy()
                         blur(16f.dp.toPx())
                     },
-                    shadow = { Shadow(alpha = 0.15f) },
-                    onDrawSurface = { drawRect(containerColor) }
+                    shadow = { Shadow(alpha = 0.25f) },
+                    onDrawSurface = {
+                        drawRect(containerColor)
+                        // 亮色描边:胶囊轮廓在深浅背景上都清晰
+                        drawRoundRect(
+                            color = rimColor,
+                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(32f.dp.toPx()),
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(
+                                width = 1.5f.dp.toPx()
+                            )
+                        )
+                    }
                 )
                 .height(64f.dp)
                 .fillMaxWidth()
