@@ -148,7 +148,8 @@ fun GlassBottomBar(
                     shape = { Capsule() },
                     effects = {
                         vibrancy()
-                        blur(16f.dp.toPx())
+                        // 8dp 是这台设备上实测可渲染的上限,16dp 会让整个效果层消失
+                        blur(8f.dp.toPx())
                     },
                     shadow = { Shadow(alpha = 0.25f) },
                     onDrawSurface = {

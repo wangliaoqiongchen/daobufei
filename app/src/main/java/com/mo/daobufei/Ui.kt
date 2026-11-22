@@ -1,15 +1,23 @@
 package com.mo.daobufei
 
+import android.app.Dialog
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.drawable.GradientDrawable
+import android.graphics.Typeface
+import android.os.Build
+import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.view.ViewOutlineProvider
+import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
+import android.widget.FrameLayout
+import android.widget.LinearLayout
 import android.widget.NumberPicker
 import android.widget.TextView
 import androidx.annotation.ColorRes
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import java.util.Locale
 
@@ -55,15 +63,47 @@ fun View.hideKeyboardOnTouchOutside() {
     }
 }
 
-// 滚轮式时间选择:时/分两个转轮一屏全部展开,直接上下拨动,不用两步式表盘
+// FlClash 风格磨砂弹窗:圆角 24dp 半透明面板 + 窗口后模糊(设备不支持时退化为纯半透明),
+// 时/分双滚轮一屏全展开直接拨动
 fun showTimePickerDialog(
     context: Context, hour: Int, minute: Int, onConfirm: (hour: Int, minute: Int) -> Unit
 ) {
-    val container = android.widget.LinearLayout(context).apply {
-        orientation = android.widget.LinearLayout.HORIZONTAL
-        gravity = android.view.Gravity.CENTER
-        setPadding(context.dp(24), context.dp(16), context.dp(24), context.dp(8))
+    val isDark = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+        Configuration.UI_MODE_NIGHT_YES
+    val panelColor =
+        if (isDark) 0xE61A1D23L.toInt() else 0xE6FFFFFFL.toInt()
+    val titleColor =
+        if (isDark) 0xFFE9ECF0L.toInt() else 0xFF171C22L.toInt()
+    val secondaryColor =
+        if (isDark) 0xFF98A2B0L.toInt() else 0xFF5D6673L.toInt()
+    val accentColor =
+        if (isDark) 0xFF4CC38AL.toInt() else 0xFF1FA35FL.toInt()
+
+    val dialog = Dialog(context)
+    dialog.window?.apply {
+        setBackgroundDrawableResource(android.R.color.transparent)
+        setLayout(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+        setDimAmount(0.2f)
+        // 窗口后模糊:面板背后的内容被磨砂化(设备不支持时系统自动忽略,仍有半透明面板)
+        if (Build.VERSION.SDK_INT >= 31) {
+            setFlags(
+                WindowManager.LayoutParams.FLAG_BLUR_BEHIND,
+                WindowManager.LayoutParams.FLAG_BLUR_BEHIND
+            )
+            attributes.blurBehindRadius = context.dp(40)
+        }
     }
+
+    val title = TextView(context).apply {
+        text = context.getString(R.string.time_dialog_title)
+        textSize = 17f
+        setTypeface(Typeface.DEFAULT_BOLD)
+        setTextColor(titleColor)
+    }
+
     val hourPicker = NumberPicker(context).apply {
         minValue = 0
         maxValue = 23
@@ -81,18 +121,62 @@ fun showTimePickerDialog(
         text = ":"
         textSize = 22f
         setPadding(context.dp(8), 0, context.dp(8), 0)
+        setTextColor(secondaryColor)
     }
-    container.addView(hourPicker)
-    container.addView(colon)
-    container.addView(minutePicker)
-    AlertDialog.Builder(context)
-        .setTitle(context.getString(R.string.time_dialog_title))
-        .setView(container)
-        .setPositiveButton(context.getString(R.string.dialog_ok)) { _, _ ->
+    val pickersRow = LinearLayout(context).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER
+        setPadding(0, context.dp(12), 0, context.dp(16))
+        addView(hourPicker)
+        addView(colon)
+        addView(minutePicker)
+    }
+
+    val cancelButton = TextView(context).apply {
+        text = context.getString(R.string.action_cancel)
+        textSize = 15f
+        setTypeface(Typeface.DEFAULT_BOLD)
+        setTextColor(secondaryColor)
+        setPadding(context.dp(18), context.dp(10), context.dp(18), context.dp(10))
+        setOnClickListener { dialog.dismiss() }
+    }
+    val okButton = TextView(context).apply {
+        text = context.getString(R.string.dialog_ok)
+        textSize = 15f
+        setTypeface(Typeface.DEFAULT_BOLD)
+        setTextColor(accentColor)
+        setPadding(context.dp(18), context.dp(10), context.dp(18), context.dp(10))
+        setOnClickListener {
             onConfirm(hourPicker.value, minutePicker.value)
+            dialog.dismiss()
         }
-        .setNegativeButton(context.getString(R.string.action_cancel), null)
-        .show()
+    }
+    val buttonsRow = LinearLayout(context).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.END
+        addView(cancelButton)
+        addView(okButton)
+    }
+
+    val panel = LinearLayout(context).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(context.dp(24), context.dp(20), context.dp(24), context.dp(10))
+        background = context.roundDrawable(panelColor, 24f)
+        addView(title)
+        addView(pickersRow)
+        addView(buttonsRow)
+    }
+    val wrapper = FrameLayout(context).apply {
+        setPadding(context.dp(24), 0, context.dp(24), 0)
+        addView(
+            panel,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        )
+    }
+
+    dialog.setContentView(wrapper)
+    dialog.show()
 }
-
-
