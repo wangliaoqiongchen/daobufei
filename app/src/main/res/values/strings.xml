@@ -155,6 +155,9 @@
     <string name="update_dialog_exit">退出应用</string>
     <string name="update_dialog_forced_note">说明:此更新限制由客户端提示,并非无法绕过的安全措施</string>
     <string name="update_dialog_open_failed">无法打开下载页面</string>
+    <string name="update_dialog_ignore">不再提醒此版本</string>
+    <string name="update_success_title">更新成功</string>
+    <string name="update_success_text">岛不废已更新到 v%1$s</string>
 
     <!-- ==================== 诊断页 ==================== -->
     <string name="diag_load_failed">页面加载失败</string>

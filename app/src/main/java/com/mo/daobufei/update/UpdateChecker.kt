@@ -96,7 +96,14 @@ class UpdateChecker private constructor(context: Context) {
 
         return when (UpdateGate.evaluate(localVersionCode(), manifest)) {
             UpdateGate.Verdict.UP_TO_DATE -> UpdateResult.UpToDate
-            UpdateGate.Verdict.NEW_UPDATE -> UpdateResult.NewUpdate(manifest)
+            UpdateGate.Verdict.NEW_UPDATE -> {
+                // 用户已选择"不再提醒此版本":该版本号及以下不再弹窗(更高版本仍会提示)
+                if (manifest.versionCode <= prefs.ignoredVersionCode) {
+                    UpdateResult.UpToDate
+                } else {
+                    UpdateResult.NewUpdate(manifest)
+                }
+            }
             UpdateGate.Verdict.FORCED_UPDATE -> UpdateResult.ForcedUpdate(manifest)
         }
     }
