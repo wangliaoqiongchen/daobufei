@@ -38,8 +38,11 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import com.mo.daobufei.update.UpdateChecker
+import com.mo.daobufei.update.UpdateConfig
 import com.mo.daobufei.update.UpdateDialogs
+import com.mo.daobufei.update.UpdateGate
+import com.mo.daobufei.update.UpdatePrefs
+import com.mo.daobufei.update.UpdateChecker
 import com.mo.daobufei.update.UpdateResult
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -115,13 +118,40 @@ class MainActivity : AppCompatActivity() {
             scrollStopHandler.postDelayed({ isScrolling.value = false }, 180)
         }
 
-        // 自动检测更新(规范 §6.3):RESUMED 期间每分钟评估一次条件
-        // (每天首次进入 / 距上次成功满 12 小时),条件满足才真正发请求;
-        // 页面进入后台时 repeatOnLifecycle 自动取消计时,回前台自动恢复
+        // 自动检测更新(规范 §6.3)+ 强更门禁(规范 §6.5):
+        // 强更判定独立于检测调度——只要持久化的 minSupportedVersionCode 高于本地版本,
+        // 每次进入前台(含划卡重进)都会立即进入强更状态,不受当日/12h/15min 条件限制
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                val updatePrefs = com.mo.daobufei.update.UpdatePrefs(applicationContext)
+                val updateConfig = com.mo.daobufei.update.UpdateConfig()
+                fun isForced(): Boolean {
+                    val local = try {
+                        packageManager.getPackageInfo(packageName, 0).longVersionCode
+                    } catch (e: Exception) {
+                        return false
+                    }
+                    val persisted = updatePrefs.lastKnownManifest(updateConfig)
+                        ?: return false
+                    return UpdateGate.evaluate(local, persisted) == UpdateGate.Verdict.FORCED_UPDATE
+                }
+
+                // 进入前台立即判定一次(修复划卡重进后强更弹窗消失)
+                if (isForced()) {
+                    UpdateDialogs.showUpdateDialog(
+                        this@MainActivity,
+                        updatePrefs.lastKnownManifest(updateConfig)!!,
+                        forced = true
+                    )
+                }
+
                 while (true) {
-                    val result = UpdateChecker.get(applicationContext).autoCheckIfNeeded()
+                    val result = if (isForced()) {
+                        // 强更态忽略检测节流,保持持久化数据新鲜
+                        UpdateChecker.get(applicationContext).manualCheck()
+                    } else {
+                        UpdateChecker.get(applicationContext).autoCheckIfNeeded()
+                    }
                     when (result) {
                         is UpdateResult.NewUpdate ->
                             UpdateDialogs.showUpdateDialog(this@MainActivity, result.manifest, forced = false)

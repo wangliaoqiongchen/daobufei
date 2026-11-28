@@ -116,7 +116,10 @@ class UpdateChecker private constructor(context: Context) {
                 !in 200..299 -> throw ServerErrorSignal(response.code)
             }
             val body = response.body?.string() ?: throw NotFoundSignal
-            UpdateManifestParser.parse(body, config)
+            val manifest = UpdateManifestParser.parse(body, config)
+            // 持久化最近一次有效 Manifest 原文:强更门禁独立于检测调度时要用它
+            prefs.lastKnownManifestJson = body
+            manifest
         } finally {
             response.close()
         }
