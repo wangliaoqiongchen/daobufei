@@ -158,7 +158,7 @@ class MoreFragment : Fragment() {
                 setPadding(0, context.dp(8), 0, context.dp(8))
             }
             val itemTitle = TextView(context).apply {
-                text = "鈥?$title"
+                text = "• $title"
                 textSize = 15f
                 setTextColor(context.color(R.color.text_primary))
             }
@@ -175,13 +175,13 @@ class MoreFragment : Fragment() {
         permissionCard.addView(permissionContent)
         root.addView(permissionCard)
 
-        // ---------- 娣辫壊妯″紡 ----------
+        // ---------- 深色模式 ----------
         root.addView(buildDarkModeCard(context))
 
-        // ---------- 鍚庡彴淇濇椿 ----------
+        // ---------- 后台保活 ----------
         root.addView(buildKeepAliveCard(context))
 
-        // ---------- 浣滆€呬笌鑱旂郴鏂瑰紡 ----------
+        // ---------- 作者与联系方式 ----------
         root.addView(
             sectionCard(
                 context,
@@ -357,8 +357,8 @@ class MoreFragment : Fragment() {
         return card
     }
 
-    // 鍚庡彴淇濇椿鍗?妫€鏌ョ數姹犱紭鍖栫櫧鍚嶅崟,娌″姞鐧藉氨涓€閿敵璇?
-    // (ColorOS 鐨?鍚庡彴鏃犻檺鍒?鍜岀郴缁熺殑鐢垫睜浼樺寲鐧藉悕鍗曟槸涓ゅ洖浜?鍚庤€呮墠鏄‖寮€鍏?
+    // 后台保活卡:检查电池优化白名单,没加白就一键申请
+    // (ColorOS 的"后台无限制"和系统的电池优化白名单是两回事,后者才是硬开关)
     private fun buildKeepAliveCard(context: android.content.Context): MaterialCardView {
         val pm = context.getSystemService(android.os.PowerManager::class.java)
         val isIgnoring = pm?.isIgnoringBatteryOptimizations(context.packageName) == true
@@ -426,7 +426,7 @@ class MoreFragment : Fragment() {
         return card
     }
 
-    // GitHub 鍗?鐐瑰嚮鎵撳紑寮€婧愪粨搴?
+        // GitHub 卡:点击打开开源仓库
     private fun buildGitHubCard(context: android.content.Context): MaterialCardView {
         val card = MaterialCardView(context).apply {
             radius = context.dp(20).toFloat()
@@ -491,7 +491,7 @@ class MoreFragment : Fragment() {
         return card
     }
 
-    // 鍗＄墖鍐呯殑灏忔爣棰?
+        // 卡片内的小标题
     private fun cardTitle(context: android.content.Context, title: String): TextView {
         return TextView(context).apply {
             text = title

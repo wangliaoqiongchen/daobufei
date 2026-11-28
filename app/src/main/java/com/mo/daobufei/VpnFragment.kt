@@ -54,13 +54,13 @@ class VpnFragment : Fragment() {
             orientation = LinearLayout.VERTICAL
         }
 
-        // ---------- 鏉冮檺寮曞鍗?鏉冮檺榻愬叏鏃朵笉鏄剧ず) ----------
+        // ---------- 权限引导卡(权限齐全时不显示) ----------
         permissionCard = buildPermissionCard(context)
         if (shouldShowPermissionCard(context)) {
             root.addView(permissionCard)
         }
 
-        // ---------- 椤堕儴鐘舵€佸ぇ鍗＄墖 ----------
+        // ---------- 顶部状态大卡片 ----------
         heroCard = MaterialCardView(context).apply {
             radius = context.dp(28).toFloat()
             cardElevation = 0f
@@ -76,7 +76,7 @@ class VpnFragment : Fragment() {
             setPadding(context.dp(24), context.dp(32), context.dp(24), context.dp(36))
         }
 
-        // 鍥芥棗:鍦嗗舰瑁佸壀 + 涓€鍦堝崱鐗囪壊鎻忚竟
+        // 国旗:圆形裁剪 + 一圈卡片色描边
         val flagRing = FrameLayout(context).apply {
             layoutParams = LinearLayout.LayoutParams(context.dp(112), context.dp(112))
             background = context.circleDrawable(context.color(R.color.card_bg))
@@ -111,7 +111,7 @@ class VpnFragment : Fragment() {
         heroCard.addView(heroContent)
         root.addView(heroCard)
 
-        // ---------- 涓棿涓ゅ紶骞舵帓灏忓崱鐗?----------
+        // ---------- 中间两张并排小卡片 ----------
         val statRow = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(
@@ -135,20 +135,20 @@ class VpnFragment : Fragment() {
         statRow.addView(qualityCard)
         root.addView(statRow)
 
-        // ---------- 寤惰繜瓒嬪娍 ----------
+        // ---------- 延迟趋势 ----------
         root.addView(buildTrendCard(context))
 
-        // ---------- 搴曢儴璁剧疆鍒楄〃琛?----------
+        // ---------- 底部设置列表行 ----------
         root.addView(buildSwitchRow(context))
 
-        // ---------- 灏忓姛鑳藉叆鍙?----------
+        // ---------- 小功能入口 ----------
         root.addView(buildDiagnosisRow(context))
 
         scrollView.addView(root)
         return scrollView
     }
 
-    // ==================== 鏉冮檺寮曞 ====================
+    // ==================== 权限引导 ====================
 
     private fun shouldShowPermissionCard(context: android.content.Context): Boolean {
         val notificationEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled()
@@ -160,7 +160,7 @@ class VpnFragment : Fragment() {
         return !notificationEnabled || !promotedEnabled
     }
 
-    // 閫氱煡/娴佷綋浜戞潈闄愮己澶辨椂鐨勫紩瀵煎崱:涓€閿烦绯荤粺璁剧疆,姣斿師鏉ョ殑 Toast 缁欏嚭鏄庣‘鍘诲
+    // 通知/流体云权限缺失时的引导卡:一键跳系统设置,比原来的 Toast 给出明确去处
     private fun buildPermissionCard(context: android.content.Context): MaterialCardView {
         val card = MaterialCardView(context).apply {
             radius = context.dp(20).toFloat()
@@ -204,9 +204,9 @@ class VpnFragment : Fragment() {
         return card
     }
 
-    // ==================== 甯歌鐣岄潰 ====================
+    // ==================== 常规界面 ====================
 
-    // 鐢熸垚涓€寮?鍥炬爣 + 鏍囬 + 鏁板€?鐨勫皬鍗＄墖,杩斿洖鍗＄墖鏈韩鍜屾暟鍊?TextView(鏂逛究鍚庣画鏇存柊鍐呭)
+    // 生成一张"图标 + 标题 + 数值"的小卡片,返回卡片本身和数值 TextView(方便后续更新内容)
     private fun buildStatCard(
         context: android.content.Context, iconRes: Int, title: String
     ): Pair<MaterialCardView, TextView> {
@@ -256,7 +256,7 @@ class VpnFragment : Fragment() {
         return card to valueText
     }
 
-    // 璁剧疆鍒楄〃琛?鍥炬爣 + 鏍囬 + 鍙充晶寮€鍏?
+    // 设置列表行:图标 + 标题 + 右侧开关
     private fun buildSwitchRow(context: android.content.Context): MaterialCardView {
         val card = MaterialCardView(context).apply {
             radius = context.dp(20).toFloat()
@@ -292,7 +292,7 @@ class VpnFragment : Fragment() {
             isChecked = SettingsPrefs.isIdleNotificationEnabled(context)
             setOnCheckedChangeListener { _, isChecked ->
                 SettingsPrefs.setIdleNotificationEnabled(context, isChecked)
-                // 绔嬪嵆鐢熸晥:璁?Service 鎸夋柊閰嶇疆閲嶅彂褰撳墠閫氱煡,涓嶇瓑涓嬩竴娆＄姸鎬佸彉鍖?
+                // 立即生效:让 Service 按新配置重发当前通知,不等下一次状态变化
                 context.startService(
                     Intent(context, VpnMonitorService::class.java)
                         .setAction(VpnMonitorService.ACTION_APPLY_IDLE_SETTING)
@@ -306,7 +306,7 @@ class VpnFragment : Fragment() {
         return card
     }
 
-    // 寤惰繜瓒嬪娍鍗＄墖:鑷粯鎶樼嚎鍥?鏁版嵁鏉ヨ嚜 Service 鐨勬渶杩?16 娆￠噰鏍?
+    // 延迟趋势卡片:自绘折线图,数据来自 Service 的最近 16 次采样
     private fun buildTrendCard(context: android.content.Context): MaterialCardView {
         val card = MaterialCardView(context).apply {
             radius = context.dp(20).toFloat()
@@ -350,7 +350,7 @@ class VpnFragment : Fragment() {
         return card
     }
 
-    // 灏忓姛鑳藉叆鍙?IP 璇婃柇(鍘熺嫭绔?tab 鏀惰繘棣栭〉)
+    // 小功能入口:IP 诊断(原独立 tab 收进首页)
     private fun buildDiagnosisRow(context: android.content.Context): MaterialCardView {
         val card = MaterialCardView(context).apply {
             radius = context.dp(20).toFloat()
@@ -430,7 +430,7 @@ class VpnFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        // 浠庣郴缁熻缃洖鏉ユ椂澶嶆鏉冮檺,鍐冲畾寮曞鍗″幓鐣?
+        // 从系统设置回来时复检权限,决定引导卡去留
         permissionCard?.visibility =
             if (shouldShowPermissionCard(requireContext())) View.VISIBLE else View.GONE
     }
@@ -500,7 +500,7 @@ class VpnFragment : Fragment() {
         }
     }
 
-    // 澶у彿鏁板瓧 + 灏忓彿鍗曚綅(濡?"128 ms");unit 涓虹┖鍒欐暣娈靛ぇ鍙锋樉绀?
+    // 大号数字 + 小号单位(如 "128 ms");unit 为空则整段大号显示
     private fun setBigText(value: String, unit: String?, valueColor: Int) {
         latencyText.setTextColor(valueColor)
         if (unit == null) {
