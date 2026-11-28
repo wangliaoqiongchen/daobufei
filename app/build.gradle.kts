@@ -21,8 +21,8 @@ android {
         applicationId = "com.mo.daobufei"
         minSdk = 36
         targetSdk = 37
-        versionCode = 3
-        versionName = "2.1.0"
+        versionCode = 4
+        versionName = "2.1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
