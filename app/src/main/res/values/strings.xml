@@ -140,6 +140,22 @@
     <string name="dark_light">浅色</string>
     <string name="dark_dark">深色</string>
 
+    <!-- ==================== 检查更新 ==================== -->
+    <string name="update_row_title">检查更新</string>
+    <string name="update_row_desc">检测服务器上的新版本</string>
+    <string name="update_status_checking">正在检测…</string>
+    <string name="update_status_new">发现新版本 v%1$s</string>
+    <string name="update_status_up_to_date">已是最新版本</string>
+    <string name="update_status_not_found">暂无更新信息</string>
+    <string name="update_status_network">网络连接失败,请稍后再试</string>
+    <string name="update_status_server">服务器暂时不可用(%1$d)</string>
+    <string name="update_status_invalid">远端配置无效</string>
+    <string name="update_dialog_download">前往下载</string>
+    <string name="update_dialog_skip">暂不更新</string>
+    <string name="update_dialog_exit">退出应用</string>
+    <string name="update_dialog_forced_note">说明:此更新限制由客户端提示,并非无法绕过的安全措施</string>
+    <string name="update_dialog_open_failed">无法打开下载页面</string>
+
     <!-- ==================== 诊断页 ==================== -->
     <string name="diag_load_failed">页面加载失败</string>
     <string name="diag_check_network">请检查网络连接后重试</string>

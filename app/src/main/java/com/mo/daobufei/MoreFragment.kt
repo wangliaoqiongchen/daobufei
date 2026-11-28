@@ -13,10 +13,17 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import com.mo.daobufei.update.UpdateChecker
+import com.mo.daobufei.update.UpdateDialogs
+import com.mo.daobufei.update.UpdateResult
+import kotlinx.coroutines.launch
 
 class MoreFragment : Fragment() {
+
+    private lateinit var updateStatusText: TextView
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -186,8 +193,93 @@ class MoreFragment : Fragment() {
         // ---------- GitHub ----------
         root.addView(buildGitHubCard(context))
 
+        // ---------- 检查更新 ----------
+        root.addView(buildUpdateCard(context))
+
         scrollView.addView(root)
         return scrollView
+    }
+
+    // 检查更新卡:点击手动检测(不受 12 小时/每日首次限制),状态即时反馈
+    private fun buildUpdateCard(context: android.content.Context): MaterialCardView {
+        val card = MaterialCardView(context).apply {
+            radius = context.dp(20).toFloat()
+            cardElevation = 0f
+            setCardBackgroundColor(context.color(R.color.card_bg))
+            strokeColor = context.color(R.color.divider)
+            strokeWidth = context.dp(1)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            setOnClickListener {
+                if (!::updateStatusText.isInitialized) return@setOnClickListener
+                lifecycleScope.launch {
+                    updateStatusText.text = context.getString(R.string.update_status_checking)
+                    val result = UpdateChecker.get(context).manualCheck()
+                    updateStatusText.text = when (result) {
+                        is UpdateResult.NewUpdate -> {
+                            UpdateDialogs.showUpdateDialog(context, result.manifest, forced = false)
+                            context.getString(R.string.update_status_new, result.manifest.versionName)
+                        }
+                        is UpdateResult.ForcedUpdate -> {
+                            UpdateDialogs.showUpdateDialog(context, result.manifest, forced = true)
+                            context.getString(R.string.update_status_new, result.manifest.versionName)
+                        }
+                        UpdateResult.UpToDate -> context.getString(R.string.update_status_up_to_date)
+                        UpdateResult.NotFound -> context.getString(R.string.update_status_not_found)
+                        is UpdateResult.ServerError ->
+                            context.getString(R.string.update_status_server, result.code)
+                        is UpdateResult.InvalidConfig ->
+                            context.getString(R.string.update_status_invalid)
+                        UpdateResult.NetworkError ->
+                            context.getString(R.string.update_status_network)
+                        else -> context.getString(R.string.update_status_checking)
+                    }
+                }
+            }
+        }
+        val row = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(context.dp(16), context.dp(14), context.dp(16), context.dp(14))
+        }
+        val iconBox = FrameLayout(context).apply {
+            layoutParams = LinearLayout.LayoutParams(context.dp(40), context.dp(40))
+            background = context.roundDrawable(context.color(R.color.accent_container), 12f)
+        }
+        val icon = ImageView(context).apply {
+            layoutParams = FrameLayout.LayoutParams(context.dp(20), context.dp(20), android.view.Gravity.CENTER)
+            setImageResource(R.drawable.ic_refresh)
+            imageTintList = android.content.res.ColorStateList.valueOf(context.color(R.color.accent))
+        }
+        iconBox.addView(icon)
+
+        val textCol = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f
+            ).apply { setMargins(context.dp(12), 0, 0, 0) }
+        }
+        val titleText = TextView(context).apply {
+            text = context.getString(R.string.update_row_title)
+            textSize = 15f
+            setTypeface(typeface, Typeface.BOLD)
+            setTextColor(context.color(R.color.text_primary))
+        }
+        updateStatusText = TextView(context).apply {
+            text = context.getString(R.string.update_row_desc)
+            textSize = 12f
+            setTextColor(context.color(R.color.text_secondary))
+            setPadding(0, context.dp(2), 0, 0)
+        }
+        textCol.addView(titleText)
+        textCol.addView(updateStatusText)
+
+        row.addView(iconBox)
+        row.addView(textCol)
+        card.addView(row)
+        return card
     }
 
     // 娣辫壊妯″紡閫夋嫨鍗?璺熼殢绯荤粺 / 娴呰壊 / 娣辫壊,鐐瑰嚮绔嬪嵆鍏ㄥ眬鐢熸晥

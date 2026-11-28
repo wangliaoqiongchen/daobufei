@@ -32,9 +32,17 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentContainerView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import com.mo.daobufei.update.UpdateChecker
+import com.mo.daobufei.update.UpdateDialogs
+import com.mo.daobufei.update.UpdateResult
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
@@ -105,6 +113,25 @@ class MainActivity : AppCompatActivity() {
             isScrolling.value = true
             scrollStopHandler.removeCallbacksAndMessages(null)
             scrollStopHandler.postDelayed({ isScrolling.value = false }, 180)
+        }
+
+        // 自动检测更新(规范 §6.3):RESUMED 期间每分钟评估一次条件
+        // (每天首次进入 / 距上次成功满 12 小时),条件满足才真正发请求;
+        // 页面进入后台时 repeatOnLifecycle 自动取消计时,回前台自动恢复
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                while (true) {
+                    val result = UpdateChecker.get(applicationContext).autoCheckIfNeeded()
+                    when (result) {
+                        is UpdateResult.NewUpdate ->
+                            UpdateDialogs.showUpdateDialog(this@MainActivity, result.manifest, forced = false)
+                        is UpdateResult.ForcedUpdate ->
+                            UpdateDialogs.showUpdateDialog(this@MainActivity, result.manifest, forced = true)
+                        else -> { /* 未满足条件/无网络等静默处理,不影响主功能 */ }
+                    }
+                    delay(60_000)
+                }
+            }
         }
 
         if (savedInstanceState == null) {
